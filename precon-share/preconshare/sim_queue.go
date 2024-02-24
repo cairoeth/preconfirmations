@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/metrics"
-	"github.com/cairoeth/preconfirmations-avs/simqueue"
+	"github.com/cairoeth/preconfirmations-avs/precon-share/metrics"
+	"github.com/cairoeth/preconfirmations-avs/precon-share/simqueue"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"

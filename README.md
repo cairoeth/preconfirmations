@@ -14,13 +14,11 @@ The full list of configuration options can be found in [precon-share/cmd/node/ma
 
 ### Running Locally
 
-Run inside the `precon-share` directory.
-
 ```bash
 docker-compose up # start services: redis and postgres
 
 # apply migration
-for file in sql/*.sql; do psql "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -f $file; done
+for file in precon-share/sql/*.sql; do psql "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -f $file; done
 
 # run blockchain
 anvil

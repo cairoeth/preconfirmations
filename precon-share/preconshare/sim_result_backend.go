@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/simqueue"
+	"github.com/cairoeth/preconfirmations-avs/precon-share/simqueue"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/log"
