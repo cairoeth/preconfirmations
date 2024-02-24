@@ -17,7 +17,7 @@ import (
 
 	"github.com/VictoriaMetrics/metrics"
 	"github.com/cairoeth/preconfirmations-avs/jsonrpcserver"
-	"github.com/cairoeth/preconfirmations-avs/pepcshare"
+	"github.com/cairoeth/preconfirmations-avs/preconshare"
 	"github.com/cairoeth/preconfirmations-avs/simqueue"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -94,13 +94,13 @@ func main() {
 	}
 	redisClient := redis.NewClient(redisOpts)
 
-	var simBackends []pepcshare.SimulationBackend //nolint:prealloc
+	var simBackends []preconshare.SimulationBackend //nolint:prealloc
 	for _, simEndpoint := range strings.Split(*simEndpointPtr, ",") {
-		simBackend := pepcshare.NewJSONRPCSimulationBackend(simEndpoint)
+		simBackend := preconshare.NewJSONRPCSimulationBackend(simEndpoint)
 		simBackends = append(simBackends, simBackend)
 	}
 
-	hintBackend := pepcshare.NewRedisHintBackend(redisClient, *channelPtr)
+	hintBackend := preconshare.NewRedisHintBackend(redisClient, *channelPtr)
 	if err != nil {
 		logger.Fatal("Failed to create redis hint backend", zap.Error(err))
 	}
@@ -110,12 +110,12 @@ func main() {
 		logger.Fatal("Failed to connect to ethBackend endpoint", zap.Error(err))
 	}
 
-	dbBackend, err := pepcshare.NewDBBackend(*postgresDSNPtr)
+	dbBackend, err := preconshare.NewDBBackend(*postgresDSNPtr)
 	if err != nil {
 		logger.Fatal("Failed to create postgres backend", zap.Error(err))
 	}
 
-	simResultBackend := pepcshare.NewSimulationResultBackend(logger, hintBackend, ethBackend, dbBackend)
+	simResultBackend := preconshare.NewSimulationResultBackend(logger, hintBackend, ethBackend, dbBackend)
 
 	redisQueue := simqueue.NewRedisQueue(logger, redisClient, "node")
 	redisQueueConfig, err := simqueue.ConfigFromEnv()
@@ -125,7 +125,7 @@ func main() {
 	redisQueue.Config = redisQueueConfig
 
 	// keep track of cancelled bundles for a 30-block window
-	cancelCache := pepcshare.NewRedisCancellationCache(redisClient, 30*12*time.Second, "node-cancel")
+	cancelCache := preconshare.NewRedisCancellationCache(redisClient, 30*12*time.Second, "node-cancel")
 
 	var workersPerNode int
 	if _, err := fmt.Sscanf(*workersPerNodePtr, "%d", &workersPerNode); err != nil {
@@ -135,7 +135,7 @@ func main() {
 		logger.Fatal("Workers per node must be greater than 0")
 	}
 	backgroundWg := &sync.WaitGroup{}
-	simQueue := pepcshare.NewQueue(logger, redisQueue, ethBackend, simBackends, simResultBackend, workersPerNode, backgroundWg, cancelCache)
+	simQueue := preconshare.NewQueue(logger, redisQueue, ethBackend, simBackends, simResultBackend, workersPerNode, backgroundWg, cancelCache)
 	queueWg := simQueue.Start(ctx)
 	// chain id
 	chainID, err := ethBackend.ChainID(ctx)
@@ -149,12 +149,12 @@ func main() {
 		logger.Fatal("Failed to parse mev sim bundle rate limit", zap.Error(err))
 	}
 
-	cachingEthBackend := pepcshare.NewCachingEthClient(ethBackend)
+	cachingEthBackend := preconshare.NewCachingEthClient(ethBackend)
 
-	api := pepcshare.NewAPI(logger, simQueue, dbBackend, cachingEthBackend, signer, simBackends, rate.Limit(rateLimit), cancelCache, time.Millisecond*60)
+	api := preconshare.NewAPI(logger, simQueue, dbBackend, cachingEthBackend, signer, simBackends, rate.Limit(rateLimit), cancelCache, time.Millisecond*60)
 
 	jsonRPCServer, err := jsonrpcserver.NewHandler(jsonrpcserver.Methods{
-		pepcshare.SendBundleEndpointName: api.SendBundle,
+		preconshare.SendBundleEndpointName: api.SendBundle,
 	})
 	if err != nil {
 		logger.Fatal("Failed to create jsonrpc server", zap.Error(err))

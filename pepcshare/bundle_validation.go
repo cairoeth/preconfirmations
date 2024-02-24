@@ -1,4 +1,4 @@
-package pepcshare
+package preconshare
 
 import (
 	"errors"

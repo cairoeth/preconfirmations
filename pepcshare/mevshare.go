@@ -1,4 +1,4 @@
-// Package pepcshare implements PEPC-Share node
+// Package preconshare implements Precon-Share node
 // Here is a full flow of data through the node:
 //
 // bundle-relay-api -> API sends:
@@ -13,7 +13,7 @@
 //
 // SimulationResultBackend -> RedisHintBackend is used to send hint to hint-relay-api
 // SimulationResultBackend -> BuilderBackend is used to send bundle to the builders
-package pepcshare
+package preconshare
 
 const (
 	MaxBlockOffset uint64 = 5
