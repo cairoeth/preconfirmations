@@ -1,6 +1,7 @@
 # 🔌 Preconfirmations AVS 
 
-## Running the service
+
+## Precon-Share
 
 ### Dependencies
 
@@ -9,9 +10,11 @@
 
 ### Configuration
 
-The full list of configuration options can be found in [cmd/node/main.go](cmd/node/main.go).
+The full list of configuration options can be found in [precon-share/cmd/node/main.go](precon-share/cmd/node/main.go).
 
 ### Running Locally
+
+Run inside the `precon-share` directory.
 
 ```bash
 docker-compose up # start services: redis and postgres

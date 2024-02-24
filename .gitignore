@@ -15,5 +15,5 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-/build
+build/
 .DS_Store
