@@ -189,8 +189,6 @@ func main() {
 		}
 	}()
 
-	logger.Info("HIHI")
-
 	connectionsClosed := make(chan struct{})
 	go func() {
 		notifier := make(chan os.Signal, 1)

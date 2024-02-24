@@ -26,18 +26,18 @@ type Storage interface {
 }
 
 type SimulationResultBackend struct {
-	log              *zap.Logger
-	hint             HintBackend
-	eth              EthClient
-	store            Storage
+	log   *zap.Logger
+	hint  HintBackend
+	eth   EthClient
+	store Storage
 }
 
 func NewSimulationResultBackend(log *zap.Logger, hint HintBackend, eth EthClient, store Storage) *SimulationResultBackend {
 	return &SimulationResultBackend{
-		log:              log,
-		hint:             hint,
-		eth:              eth,
-		store:            store,
+		log:   log,
+		hint:  hint,
+		eth:   eth,
+		store: store,
 	}
 }
 
