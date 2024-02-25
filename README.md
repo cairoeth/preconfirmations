@@ -26,3 +26,11 @@ anvil
 # run node
 make && ./build/node
 ```
+
+## Preconf-Contract
+
+### Deploy
+
+```bash
+forge script script/PreconfDeploy.s.sol:PreconfDeploy --rpc-url $RPC_URL --broadcast -vvvv
+```

@@ -5,22 +5,22 @@ import {Initializable} from "openzeppelin-upgrades/proxy/utils/Initializable.sol
 import {OwnableUpgradeable} from "openzeppelin-upgrades/access/OwnableUpgradeable.sol";
 
 import {ECDSA} from "openzeppelin/utils/cryptography/ECDSA.sol";
-import {EIP712} from "openzeppelin/utils/cryptography/draft-EIP712.sol";
+import {EIP712Upgradeable} from "openzeppelin-upgrades/utils/cryptography/draft-EIP712Upgradeable.sol";
 
 import {IProver} from "relic-sdk/packages/contracts/interfaces/IProver.sol";
 import {Fact} from "relic-sdk/packages/contracts/lib/Facts.sol";
 
-import {ServiceManager} from "src/ServiceManager.sol";
+import {PreconfServiceManager} from "src/PreconfServiceManager.sol";
 
-/// @title ChallengeManager
+/// @title PreconfChallengeManager
 /// @author @cairoeth
 /// @notice Manages challenges for preconfirmations.
-contract ChallengeManager is Initializable, OwnableUpgradeable, EIP712 {
+contract PreconfChallengeManager is Initializable, OwnableUpgradeable, EIP712Upgradeable {
     /*//////////////////////////////////////////////////////////////
                                 VARIABLES
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice The ServiceManager contract address.
+    /// @notice The PreconfServiceManager contract address.
     address public serviceManager;
 
     /// @notice The Transaction Prover address from Relic.
@@ -66,9 +66,10 @@ contract ChallengeManager is Initializable, OwnableUpgradeable, EIP712 {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Sets the EIP712 variables.
-    constructor() EIP712("ChallengeManager", "0.1.0") {
-        // TODO: disable initializer?
+    /// @notice Prevent the implementation contract from being initialized.
+    /// @dev The proxy contract state will still be able to call this function because the constructor does not affect the proxy state.
+    constructor() {
+        _disableInitializers();
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -77,10 +78,11 @@ contract ChallengeManager is Initializable, OwnableUpgradeable, EIP712 {
 
     /// @notice Initializes the contract.
     /// @param owner The owner of the contract.
-    /// @param _serviceManager The address of the ServiceManager contract.
+    /// @param _serviceManager The address of the PreconfServiceManager contract.
     /// @param _prover The address of the transaction prover.
     function initialize(address owner, address _serviceManager, address _prover) external initializer {
         __Ownable_init();
+        __EIP712_init("PreconfChallengeManager", "0.1.0");
         _transferOwnership(owner);
 
         serviceManager = _serviceManager;
@@ -120,8 +122,8 @@ contract ChallengeManager is Initializable, OwnableUpgradeable, EIP712 {
             // Get address of operator from the signed preconfirmation.
             address operator = ECDSA.recover(preconfHash, preconfSigned);
 
-            // Slash via the ServiceManager.
-            ServiceManager(serviceManager).freezeOperator(operator);
+            // Slash via the PreconfServiceManager.
+            PreconfServiceManager(serviceManager).freezeOperator(operator);
         }
 
         challenges[preconfHash] = true;
