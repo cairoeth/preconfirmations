@@ -77,11 +77,13 @@ contract ChallengeManager is Initializable, OwnableUpgradeable, EIP712 {
 
     /// @notice Initializes the contract.
     /// @param owner The owner of the contract.
+    /// @param _serviceManager The address of the ServiceManager contract.
     /// @param _prover The address of the transaction prover.
-    function initialize(address owner, address _prover) external initializer {
+    function initialize(address owner, address _serviceManager, address _prover) external initializer {
         __Ownable_init();
         _transferOwnership(owner);
 
+        serviceManager = _serviceManager;
         prover = _prover;
     }
 

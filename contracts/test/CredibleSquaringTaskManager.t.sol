@@ -30,7 +30,12 @@ contract TestPreconfirmations is BLSMockAVSDeployer {
                 new TransparentUpgradeableProxy(
                     address(challengeImplementation),
                     address(proxyAdmin),
-                    abi.encodeWithSelector(ChallengeManager.initialize.selector, address(this), address(this))
+                    abi.encodeWithSelector(
+                        ChallengeManager.initialize.selector,
+                        address(this),
+                        computeCreateAddress(address(this), vm.getNonce(address(this)) + 1),
+                        address(this)
+                    )
                 )
             )
         );
