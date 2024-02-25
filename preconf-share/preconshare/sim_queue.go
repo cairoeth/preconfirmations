@@ -103,7 +103,7 @@ func (q *SimQueue) Start(ctx context.Context) *sync.WaitGroup {
 	return wg
 }
 
-func (q *SimQueue) ScheduleBundleSimulation(ctx context.Context, bundle *SendMevBundleArgs, highPriority bool) error {
+func (q *SimQueue) ScheduleBundleSimulation(ctx context.Context, bundle *SendRequestArgs, highPriority bool) error {
 	startAt := time.Now()
 	defer func() {
 		metrics.RecordBundleAddQueueDuration(time.Since(startAt).Milliseconds())
@@ -128,7 +128,7 @@ func (w *SimulationWorker) Process(ctx context.Context, data []byte, info simque
 	defer func() {
 		metrics.RecordBundleProcessDuration(time.Since(startAt).Milliseconds())
 	}()
-	var bundle SendMevBundleArgs
+	var bundle SendRequestArgs
 	err = json.Unmarshal(data, &bundle)
 	if err != nil {
 		w.log.Error("Failed to unmarshal bundle simulation data", zap.Error(err))
@@ -152,33 +152,6 @@ func (w *SimulationWorker) Process(ctx context.Context, data []byte, info simque
 		return simqueue.ErrProcessUnrecoverable
 	}
 
-	// result, err := w.simulationBackend.SimulateBundle(ctx, &bundle, nil)
-	// if err != nil {
-	// 	logger.Error("Failed to simulate matched bundle", zap.Error(err))
-	// 	// we want to retry after such error
-	// 	return errors.Join(err, simqueue.ErrProcessWorkerError)
-	// }
-
-	// logger.Info("Simulated bundle",
-	// 	zap.Bool("success", result.Success), zap.String("err_reason", result.Error),
-	// 	zap.String("gwei_eff_gas_price", formatUnits(result.MevGasPrice.ToInt(), "gwei")),
-	// 	zap.String("eth_profit", formatUnits(result.Profit.ToInt(), "eth")),
-	// 	zap.String("eth_refundable_value", formatUnits(result.RefundableValue.ToInt(), "eth")),
-	// 	zap.Uint64("gas_used", uint64(result.GasUsed)),
-	// 	zap.Uint64("state_block", uint64(result.StateBlock)),
-	// 	zap.Int("retries", info.Retries),
-	// )
-
-	// // Try to re-simulate bundle if it failed
-	// if !result.Success && isErrorRecoverable(result.Error) {
-	// 	max := bundle.Inclusion.MaxBlock
-	// 	state := result.StateBlock
-	// 	// If state block is N, that means simulation for target block N+1 was tried
-	// 	if max != 0 && state != 0 && max > state+1 {
-	// 		return simqueue.ErrProcessScheduleNextBlock
-	// 	}
-	// }
-
 	w.backgroundWg.Add(1)
 	go func() {
 		defer w.backgroundWg.Done()
@@ -190,13 +163,10 @@ func (w *SimulationWorker) Process(ctx context.Context, data []byte, info simque
 		}
 	}()
 
-	// if !result.Success && !isErrorRecoverable(result.Error) {
-	// 	return simqueue.ErrProcessUnrecoverable
-	// }
 	return nil
 }
 
-func (w *SimulationWorker) isBundleCancelled(ctx context.Context, bundle *SendMevBundleArgs) (bool, error) {
+func (w *SimulationWorker) isBundleCancelled(ctx context.Context, bundle *SendRequestArgs) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, simCacheTimeout)
 	defer cancel()
 	if bundle.Metadata == nil {

@@ -14,9 +14,7 @@ type HintBackend interface {
 
 // SimulationBackend is an interface for simulating transactions
 // There should be one simulation backend per worker node
-type SimulationBackend interface {
-	SimulateBundle(ctx context.Context, bundle *SendMevBundleArgs, aux *SimMevBundleAuxArgs) (*SimMevBundleResponse, error)
-}
+type SimulationBackend interface{}
 
 type JSONRPCSimulationBackend struct {
 	client jsonrpc.RPCClient
@@ -27,12 +25,6 @@ func NewJSONRPCSimulationBackend(url string) *JSONRPCSimulationBackend {
 		client: jsonrpc.NewClient(url),
 		// todo here use optsx
 	}
-}
-
-func (b *JSONRPCSimulationBackend) SimulateBundle(ctx context.Context, bundle *SendMevBundleArgs, aux *SimMevBundleAuxArgs) (*SimMevBundleResponse, error) {
-	var result SimMevBundleResponse
-	err := b.client.CallFor(ctx, &result, "mev_simBundle", bundle, aux)
-	return &result, err
 }
 
 type RedisHintBackend struct {

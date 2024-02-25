@@ -2,7 +2,6 @@ package preconshare
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -16,26 +15,9 @@ var (
 	ErrInvalidBundlePrivacy     = errors.New("invalid bundle privacy")
 )
 
-func cleanBody(bundle *SendMevBundleArgs) {
-	for _, el := range bundle.Body {
-		if el.Hash != nil {
-			el.Tx = nil
-			el.Bundle = nil
-		}
-		if el.Tx != nil {
-			el.Hash = nil
-			el.Bundle = nil
-		}
-		if el.Bundle != nil {
-			el.Hash = nil
-			el.Tx = nil
-		}
-	}
-}
-
 // MergeInclusionIntervals writes to the topLevel inclusion value of overlap between inner and topLevel
 // or return error if there is no overlap
-func MergeInclusionIntervals(topLevel, inner *MevBundleInclusion) error {
+func MergeInclusionIntervals(topLevel, inner *RequestInclusion) error {
 	if topLevel.MaxBlock < inner.BlockNumber || inner.MaxBlock < topLevel.BlockNumber {
 		return ErrInvalidInclusion
 	}
@@ -49,19 +31,7 @@ func MergeInclusionIntervals(topLevel, inner *MevBundleInclusion) error {
 	return nil
 }
 
-// MergeBuilders writes to the topLevel builder value of overlap between inner and topLevel
-func MergeBuilders(topLevel, inner *MevBundlePrivacy) {
-	if topLevel == nil {
-		return
-	}
-	if inner == nil {
-		topLevel.Builders = nil
-		return
-	}
-	topLevel.Builders = Intersect(topLevel.Builders, inner.Builders)
-}
-
-func validateBundleInner(level int, bundle *SendMevBundleArgs, currentBlock uint64, signer types.Signer) (hash common.Hash, txs int, unmatched bool, err error) { //nolint:gocognit,gocyclo
+func validateBundleInner(level int, bundle *SendRequestArgs, currentBlock uint64, signer types.Signer) (hash common.Hash, txs int, unmatched bool, err error) { //nolint:gocognit,gocyclo
 	if level > MaxNestingLevel {
 		return hash, txs, unmatched, ErrBundleTooDeep
 	}
@@ -89,26 +59,13 @@ func validateBundleInner(level int, bundle *SendMevBundleArgs, currentBlock uint
 	}
 
 	// validate body
-	cleanBody(bundle)
 	if len(bundle.Body) == 0 {
 		return hash, txs, unmatched, ErrInvalidBundleBodySize
 	}
 
 	bodyHashes := make([]common.Hash, 0, len(bundle.Body))
-	for i, el := range bundle.Body {
-		if el.Hash != nil {
-			// make sure that we have up to one unmatched element and only at the beginning of the body
-			if unmatched || i != 0 {
-				return hash, txs, unmatched, ErrInvalidBundleBody
-			}
-			unmatched = true
-			bodyHashes = append(bodyHashes, *el.Hash)
-			if len(bundle.Body) == 1 {
-				// we have unmatched bundle without anything else
-				return hash, txs, unmatched, ErrInvalidBundleBody
-			}
-			txs++
-		} else if el.Tx != nil {
+	for _, el := range bundle.Body {
+		if el.Tx != nil {
 			var tx types.Transaction
 			err := tx.UnmarshalBinary(*el.Tx)
 			if err != nil {
@@ -116,23 +73,6 @@ func validateBundleInner(level int, bundle *SendMevBundleArgs, currentBlock uint
 			}
 			bodyHashes = append(bodyHashes, tx.Hash())
 			txs++
-		} else if el.Bundle != nil {
-			err = MergeInclusionIntervals(&bundle.Inclusion, &el.Bundle.Inclusion)
-			if err != nil {
-				return hash, txs, unmatched, err
-			}
-			MergeBuilders(bundle.Privacy, el.Bundle.Privacy)
-			// hash, tx count, has backrun?
-			h, t, u, err := validateBundleInner(level+1, el.Bundle, currentBlock, signer)
-			if err != nil {
-				return hash, txs, unmatched, err
-			}
-			bodyHashes = append(bodyHashes, h)
-			txs += t
-			// don't allow unmatched bundles below 1-st level
-			if u {
-				return hash, txs, unmatched, ErrInvalidBundleBody
-			}
 		}
 	}
 	if txs > MaxBodySize {
@@ -151,39 +91,8 @@ func validateBundleInner(level int, bundle *SendMevBundleArgs, currentBlock uint
 	}
 
 	// validate validity
-	if unmatched && len(bundle.Validity.Refund) > 0 {
+	if unmatched {
 		// refunds should be empty for unmatched bundles
-		return hash, txs, unmatched, ErrInvalidBundleConstraints
-	}
-	totalRefundConfigPercent := 0
-	for _, c := range bundle.Validity.RefundConfig {
-		percent := c.Percent
-		if percent < 0 || percent > 100 {
-			return hash, txs, unmatched, ErrInvalidBundleConstraints
-		}
-		totalRefundConfigPercent += c.Percent
-	}
-	if totalRefundConfigPercent > 100 {
-		return hash, txs, unmatched, ErrInvalidBundleConstraints
-	}
-
-	usedBodyPos := make(map[int]struct{})
-	totalPercent := 0
-	for _, c := range bundle.Validity.Refund {
-		if c.BodyIdx >= len(bundle.Body) || c.BodyIdx < 0 {
-			return hash, txs, unmatched, ErrInvalidBundleConstraints
-		}
-		if _, ok := usedBodyPos[c.BodyIdx]; ok {
-			return hash, txs, unmatched, ErrInvalidBundleConstraints
-		}
-		usedBodyPos[c.BodyIdx] = struct{}{}
-
-		if c.Percent < 0 || c.Percent > 100 {
-			return hash, txs, unmatched, ErrInvalidBundleConstraints
-		}
-		totalPercent += c.Percent
-	}
-	if totalPercent > 100 {
 		return hash, txs, unmatched, ErrInvalidBundleConstraints
 	}
 
@@ -196,18 +105,11 @@ func validateBundleInner(level int, bundle *SendMevBundleArgs, currentBlock uint
 		if bundle.Privacy.Hints != HintNone {
 			bundle.Privacy.Hints.SetHint(HintHash)
 		}
-		if r := bundle.Privacy.WantRefund; r != nil && (*r < 0 || *r > 100) {
-			return hash, txs, unmatched, ErrInvalidBundlePrivacy
-		}
-		// make builders lowercase
-		for i, b := range bundle.Privacy.Builders {
-			bundle.Privacy.Builders[i] = strings.ToLower(b)
-		}
 	}
 
 	// clean metadata
 	// clean fields owned by the node
-	bundle.Metadata = &MevBundleMetadata{}
+	bundle.Metadata = &RequestMetadata{}
 	bundle.Metadata.BundleHash = hash
 	bundle.Metadata.BodyHashes = bodyHashes
 	matchingHasher := sha3.NewLegacyKeccak256()
@@ -218,21 +120,7 @@ func validateBundleInner(level int, bundle *SendMevBundleArgs, currentBlock uint
 	return hash, txs, unmatched, nil
 }
 
-func ValidateBundle(bundle *SendMevBundleArgs, currentBlock uint64, signer types.Signer) (hash common.Hash, unmatched bool, err error) {
+func ValidateBundle(bundle *SendRequestArgs, currentBlock uint64, signer types.Signer) (hash common.Hash, unmatched bool, err error) {
 	hash, _, unmatched, err = validateBundleInner(0, bundle, currentBlock, signer)
 	return hash, unmatched, err
-}
-
-func mergePrivacyBuildersInner(bundle *SendMevBundleArgs, topLevel *MevBundlePrivacy) {
-	MergeBuilders(topLevel, bundle.Privacy)
-	for _, el := range bundle.Body {
-		if el.Bundle != nil {
-			mergePrivacyBuildersInner(el.Bundle, topLevel)
-		}
-	}
-}
-
-// MergePrivacyBuilders Sets privacy.builders to the intersection of all privacy.builders in the bundle
-func MergePrivacyBuilders(bundle *SendMevBundleArgs) {
-	mergePrivacyBuildersInner(bundle, bundle.Privacy)
 }

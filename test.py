@@ -33,7 +33,7 @@ while True:
                 {
                     "version": "v0.1",
                     "inclusion": {
-                        "block": block,
+                        "desiredBlock": block,
                         "maxBlock": block
                     },
                     "body": [
@@ -58,7 +58,7 @@ while True:
                     }
                 }
             ],
-            "method": "preconf_sendBundle",
+            "method": "preconf_sendRequest",
             "id": 1,
             "jsonrpc": "2.0"
         })

@@ -16,12 +16,11 @@ import (
 // SimulationResult is responsible for processing simulation results
 // NOTE: That error should be returned only if simulation should be retried, for example if redis is down
 type SimulationResult interface {
-	SimulatedBundle(ctx context.Context, args *SendMevBundleArgs, info simqueue.QueueItemInfo) error
+	SimulatedBundle(ctx context.Context, args *SendRequestArgs, info simqueue.QueueItemInfo) error
 }
 
 type Storage interface {
-	InsertBundleForStats(ctx context.Context, bundle *SendMevBundleArgs) (known bool, err error)
-	InsertBundleForBuilder(ctx context.Context, bundle *SendMevBundleArgs, result *SimMevBundleResponse, targetBlock uint64) error
+	InsertBundleForStats(ctx context.Context, bundle *SendRequestArgs) (known bool, err error)
 	InsertHistoricalHint(ctx context.Context, currentBlock uint64, hint *Hint) error
 }
 
@@ -41,12 +40,9 @@ func NewSimulationResultBackend(log *zap.Logger, hint HintBackend, eth EthClient
 	}
 }
 
-func izZeroPriorityFeeTX(bundle *SendMevBundleArgs) bool {
+func izZeroPriorityFeeTX(bundle *SendRequestArgs) bool {
 	if len(bundle.Body) != 1 {
 		return false // not a single tx bundle
-	}
-	if bundle.Body[0].Bundle != nil {
-		return false // bundle, not a single tx bundle
 	}
 	var tx types.Transaction
 	btx := bundle.Body[0]
@@ -65,7 +61,7 @@ func izZeroPriorityFeeTX(bundle *SendMevBundleArgs) bool {
 // SimulatedBundle is called when simulation is done
 // NOTE: we return error only if we want to retry the simulation
 func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
-	bundle *SendMevBundleArgs, _ simqueue.QueueItemInfo,
+	bundle *SendRequestArgs, _ simqueue.QueueItemInfo,
 ) error {
 	start := time.Now()
 
@@ -112,7 +108,7 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 	return nil
 }
 
-func (s *SimulationResultBackend) ProcessHints(ctx context.Context, bundle *SendMevBundleArgs) error {
+func (s *SimulationResultBackend) ProcessHints(ctx context.Context, bundle *SendRequestArgs) error {
 	if bundle.Privacy == nil {
 		return nil
 	}

@@ -177,7 +177,7 @@ func NewDBBackend(postgresDSN string) (*DBBackend, error) {
 	}, nil
 }
 
-func (b *DBBackend) GetBundleByMatchingHash(ctx context.Context, hash common.Hash) (*SendMevBundleArgs, error) {
+func (b *DBBackend) GetBundleByMatchingHash(ctx context.Context, hash common.Hash) (*SendRequestArgs, error) {
 	var dbSbundle DBSbundle
 	err := b.getBundle.GetContext(ctx, &dbSbundle, hash.Bytes())
 	if errors.Is(err, sql.ErrNoRows) {
@@ -186,7 +186,7 @@ func (b *DBBackend) GetBundleByMatchingHash(ctx context.Context, hash common.Has
 		return nil, err
 	}
 
-	var bundle SendMevBundleArgs
+	var bundle SendRequestArgs
 	err = json.Unmarshal(dbSbundle.Body, &bundle)
 	if err != nil {
 		return nil, err
@@ -197,7 +197,7 @@ func (b *DBBackend) GetBundleByMatchingHash(ctx context.Context, hash common.Has
 // InsertBundleForStats inserts a bundle into the database.
 // When called for the second time for the known bundle, it will return known = true and update bundle simulation
 // results with the last inserted simulation results.
-func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendMevBundleArgs) (known bool, err error) { //nolint:gocognit
+func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendRequestArgs) (known bool, err error) { //nolint:gocognit
 	var dbBundle DBSbundle
 	if bundle.Metadata == nil {
 		return known, ErrNilBundleMetadata
@@ -297,8 +297,6 @@ func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendMevBun
 		if i < len(bundle.Body) {
 			if bundle.Body[i].Tx != nil {
 				bodyType = 1
-			} else if bundle.Body[i].Bundle != nil {
-				bodyType = 2
 			}
 		}
 		bodyElements[i] = DBSbundleBody{Hash: bundle.Metadata.BundleHash.Bytes(), ElementHash: hash.Bytes(), Idx: i, Type: bodyType}
@@ -310,30 +308,6 @@ func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendMevBun
 		return known, err
 	}
 	return known, dbTx.Commit()
-}
-
-// InsertBundleForBuilder inserts a bundle into the database for a builder to use
-// Target block is the block the bundle is trying to get in.
-// When it's called for the known bundle, we update the bundle with fresh simulation results and new target block.
-func (b *DBBackend) InsertBundleForBuilder(ctx context.Context, bundle *SendMevBundleArgs, result *SimMevBundleResponse, targetBlock uint64) error {
-	var dbBundle DBSbundleBuilder
-	var err error
-	if bundle.Metadata == nil {
-		return ErrNilBundleMetadata
-	}
-	dbBundle.Hash = bundle.Metadata.BundleHash.Bytes()
-	dbBundle.Block = int64(targetBlock)
-	dbBundle.MaxBlock = int64(targetBlock)
-	dbBundle.SimStateBlock = sql.NullInt64{Int64: int64(result.StateBlock), Valid: result.Success}
-	dbBundle.SimEffGasPrice = sql.NullString{String: dbIntToEth(&result.MevGasPrice), Valid: result.Success}
-	dbBundle.SimProfit = sql.NullString{String: dbIntToEth(&result.Profit), Valid: result.Success}
-	dbBundle.Body, err = json.Marshal(bundle)
-	if err != nil {
-		return err
-	}
-
-	_, err = b.insertBuilderBundle.ExecContext(ctx, dbBundle)
-	return err
 }
 
 func dbIntToEth(i *hexutil.Big) string {

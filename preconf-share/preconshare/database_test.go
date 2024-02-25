@@ -65,20 +65,19 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 	tx := common.Hex2Bytes("0x0102030405060708091011121314151617181920212223242526272829303132")
 	signer := common.HexToAddress("0x0102030405060708091011121314151617181920")
 
-	bundle := SendMevBundleArgs{
+	bundle := SendRequestArgs{
 		Version: "v0.1",
-		Inclusion: MevBundleInclusion{
+		Inclusion: RequestInclusion{
 			BlockNumber: 1,
 			MaxBlock:    2,
 		},
-		Body: []MevBundleBody{{Tx: (*hexutil.Bytes)(&tx)}},
-		Privacy: &MevBundlePrivacy{
+		Body: []RuquestBody{{Tx: (*hexutil.Bytes)(&tx)}},
+		Privacy: &RequestPrivacy{
 			Hints:      HintHash,
 			Builders:   nil,
 			WantRefund: nil,
 		},
-		Validity: MevBundleValidity{},
-		Metadata: &MevBundleMetadata{
+		Metadata: &RequestMetadata{
 			BundleHash: bundleHash,
 			BodyHashes: []common.Hash{bundleHash},
 			Signer:     signer,
@@ -87,20 +86,9 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 		},
 	}
 
-	// sim 1, fail
-	simResult := SimMevBundleResponse{
-		Success:         false,
-		Error:           "error-3",
-		StateBlock:      3,
-		MevGasPrice:     hexutil.Big(*big.NewInt(0)),
-		Profit:          hexutil.Big(*big.NewInt(0)),
-		RefundableValue: hexutil.Big(*big.NewInt(0)),
-		GasUsed:         703,
-		BodyLogs:        nil,
-	}
 	var dbBundle DBSbundle
 
-	known, err := b.InsertBundleForStats(context.Background(), &bundle, &simResult)
+	known, err := b.InsertBundleForStats(context.Background(), &bundle)
 	require.NoError(t, err)
 	require.False(t, known)
 
@@ -129,19 +117,7 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 	require.True(t, dbBundle.SimTotalSimCount.Valid)
 	require.Equal(t, int64(1), dbBundle.SimTotalSimCount.Int64)
 
-	// sim 2, fail - db sim should be updated
-	simResult = SimMevBundleResponse{
-		Success:         false,
-		Error:           "error-4",
-		StateBlock:      4,
-		MevGasPrice:     hexutil.Big(*big.NewInt(0)),
-		Profit:          hexutil.Big(*big.NewInt(0)),
-		RefundableValue: hexutil.Big(*big.NewInt(0)),
-		GasUsed:         704,
-		BodyLogs:        nil,
-	}
-
-	known, err = b.InsertBundleForStats(context.Background(), &bundle, &simResult)
+	known, err = b.InsertBundleForStats(context.Background(), &bundle)
 	require.NoError(t, err)
 	require.True(t, known)
 	err = b.db.Get(&dbBundle, "SELECT * FROM sbundle WHERE hash = $1", bundleHash.Bytes())
@@ -161,19 +137,7 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 	require.True(t, dbBundle.SimTotalSimCount.Valid)
 	require.Equal(t, int64(2), dbBundle.SimTotalSimCount.Int64)
 
-	// sim 3, ok - db sim should be updated
-	simResult = SimMevBundleResponse{
-		Success:         true,
-		Error:           "",
-		StateBlock:      5,
-		MevGasPrice:     hexutil.Big(*big.NewInt(5)),
-		Profit:          hexutil.Big(*big.NewInt(5 * 2)),
-		RefundableValue: hexutil.Big(*big.NewInt(5 * 3)),
-		GasUsed:         1705,
-		BodyLogs:        nil,
-	}
-
-	known, err = b.InsertBundleForStats(context.Background(), &bundle, &simResult)
+	known, err = b.InsertBundleForStats(context.Background(), &bundle)
 	require.NoError(t, err)
 	require.True(t, known)
 	err = b.db.Get(&dbBundle, "SELECT * FROM sbundle WHERE hash = $1", bundleHash.Bytes())
@@ -195,19 +159,7 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 	require.True(t, dbBundle.SimTotalSimCount.Valid)
 	require.Equal(t, int64(3), dbBundle.SimTotalSimCount.Int64)
 
-	// sim 4, ok - db sim should be updated
-	simResult = SimMevBundleResponse{
-		Success:         true,
-		Error:           "",
-		StateBlock:      6,
-		MevGasPrice:     hexutil.Big(*big.NewInt(6)),
-		Profit:          hexutil.Big(*big.NewInt(6 * 2)),
-		RefundableValue: hexutil.Big(*big.NewInt(6 * 3)),
-		GasUsed:         1706,
-		BodyLogs:        nil,
-	}
-
-	known, err = b.InsertBundleForStats(context.Background(), &bundle, &simResult)
+	known, err = b.InsertBundleForStats(context.Background(), &bundle)
 	require.NoError(t, err)
 	require.True(t, known)
 	err = b.db.Get(&dbBundle, "SELECT * FROM sbundle WHERE hash = $1", bundleHash.Bytes())
@@ -228,19 +180,7 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 	require.True(t, dbBundle.SimTotalSimCount.Valid)
 	require.Equal(t, int64(4), dbBundle.SimTotalSimCount.Int64)
 
-	// sim 5, fail - db sim should not be updated
-	simResult = SimMevBundleResponse{
-		Success:         false,
-		Error:           "error-7",
-		StateBlock:      7,
-		MevGasPrice:     hexutil.Big(*big.NewInt(7)),
-		Profit:          hexutil.Big(*big.NewInt(7 * 2)),
-		RefundableValue: hexutil.Big(*big.NewInt(7 * 3)),
-		GasUsed:         1707,
-		BodyLogs:        nil,
-	}
-
-	known, err = b.InsertBundleForStats(context.Background(), &bundle, &simResult)
+	known, err = b.InsertBundleForStats(context.Background(), &bundle)
 	require.NoError(t, err)
 	require.True(t, known)
 	err = b.db.Get(&dbBundle, "SELECT * FROM sbundle WHERE hash = $1", bundleHash.Bytes())
@@ -276,20 +216,19 @@ func TestDBBackend_InsertBundleForBuilder(t *testing.T) {
 	tx := common.Hex2Bytes("0x0102030405060708091011121314151617181920212223242526272829303132")
 	signer := common.HexToAddress("0x0102030405060708091011121314151617181920")
 
-	bundle := SendMevBundleArgs{
+	bundle := SendRequestArgs{
 		Version: "v0.1",
-		Inclusion: MevBundleInclusion{
+		Inclusion: RequestInclusion{
 			BlockNumber: 6,
 			MaxBlock:    8,
 		},
-		Body: []MevBundleBody{{Tx: (*hexutil.Bytes)(&tx)}},
-		Privacy: &MevBundlePrivacy{
+		Body: []RuquestBody{{Tx: (*hexutil.Bytes)(&tx)}},
+		Privacy: &RequestPrivacy{
 			Hints:      HintHash,
 			Builders:   nil,
 			WantRefund: nil,
 		},
-		Validity: MevBundleValidity{},
-		Metadata: &MevBundleMetadata{
+		Metadata: &RequestMetadata{
 			BundleHash: bundleHash,
 			BodyHashes: []common.Hash{bundleHash},
 			Signer:     signer,
@@ -297,20 +236,6 @@ func TestDBBackend_InsertBundleForBuilder(t *testing.T) {
 			ReceivedAt: hexutil.Uint64(receivedAt.UnixMicro()),
 		},
 	}
-
-	sim := SimMevBundleResponse{
-		Success:         true,
-		Error:           "",
-		StateBlock:      5,
-		MevGasPrice:     hexutil.Big(*big.NewInt(5)),
-		Profit:          hexutil.Big(*big.NewInt(10)),
-		RefundableValue: hexutil.Big(*big.NewInt(7)),
-		GasUsed:         1700,
-		BodyLogs:        nil,
-	}
-
-	err = b.InsertBundleForBuilder(context.Background(), &bundle, &sim, 6)
-	require.NoError(t, err)
 
 	var dbBundle DBSbundleBuilder
 	err = b.db.Get(&dbBundle, "SELECT * FROM sbundle_builder WHERE hash = $1", bundleHash.Bytes())
@@ -325,20 +250,6 @@ func TestDBBackend_InsertBundleForBuilder(t *testing.T) {
 	require.Equal(t, "0.000000000000000005", dbBundle.SimEffGasPrice.String)
 	require.True(t, dbBundle.SimProfit.Valid)
 	require.Equal(t, "0.000000000000000010", dbBundle.SimProfit.String)
-
-	sim = SimMevBundleResponse{
-		Success:         true,
-		Error:           "",
-		StateBlock:      6,
-		MevGasPrice:     hexutil.Big(*big.NewInt(6)),
-		Profit:          hexutil.Big(*big.NewInt(11)),
-		RefundableValue: hexutil.Big(*big.NewInt(8)),
-		GasUsed:         1750,
-		BodyLogs:        nil,
-	}
-
-	err = b.InsertBundleForBuilder(context.Background(), &bundle, &sim, 7)
-	require.NoError(t, err)
 
 	err = b.db.Get(&dbBundle, "SELECT * FROM sbundle_builder WHERE hash = $1", bundleHash.Bytes())
 	require.NoError(t, err)

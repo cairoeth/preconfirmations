@@ -10,22 +10,22 @@ import (
 func TestMergeInclusionIntervals(t *testing.T) {
 	cases := []struct {
 		name        string
-		top         MevBundleInclusion
-		bottom      MevBundleInclusion
-		expectedTop MevBundleInclusion
+		top         RequestInclusion
+		bottom      RequestInclusion
+		expectedTop RequestInclusion
 		err         error
 	}{
 		{
 			name: "same intervals",
-			top: MevBundleInclusion{
+			top: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(2),
 			},
-			bottom: MevBundleInclusion{
+			bottom: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(2),
 			},
-			expectedTop: MevBundleInclusion{
+			expectedTop: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(2),
 			},
@@ -33,15 +33,15 @@ func TestMergeInclusionIntervals(t *testing.T) {
 		},
 		{
 			name: "overlap, top to the right",
-			top: MevBundleInclusion{
+			top: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(3),
 			},
-			bottom: MevBundleInclusion{
+			bottom: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(4),
 			},
-			expectedTop: MevBundleInclusion{
+			expectedTop: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(3),
 			},
@@ -49,15 +49,15 @@ func TestMergeInclusionIntervals(t *testing.T) {
 		},
 		{
 			name: "overlap, top to the left",
-			top: MevBundleInclusion{
+			top: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(4),
 			},
-			bottom: MevBundleInclusion{
+			bottom: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(3),
 			},
-			expectedTop: MevBundleInclusion{
+			expectedTop: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(3),
 			},
@@ -65,15 +65,15 @@ func TestMergeInclusionIntervals(t *testing.T) {
 		},
 		{
 			name: "overlap, bottom inside top",
-			top: MevBundleInclusion{
+			top: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(4),
 			},
-			bottom: MevBundleInclusion{
+			bottom: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(3),
 			},
-			expectedTop: MevBundleInclusion{
+			expectedTop: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(3),
 			},
@@ -81,30 +81,30 @@ func TestMergeInclusionIntervals(t *testing.T) {
 		},
 		{
 			name: "overlap, top inside bottom",
-			top: MevBundleInclusion{
+			top: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(3),
 			},
-			bottom: MevBundleInclusion{
+			bottom: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(4),
 			},
-			expectedTop: MevBundleInclusion{
+			expectedTop: RequestInclusion{
 				BlockNumber: hexutil.Uint64(2),
 				MaxBlock:    hexutil.Uint64(3),
 			},
 		},
 		{
 			name: "no overlap, top to the right",
-			top: MevBundleInclusion{
+			top: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(2),
 			},
-			bottom: MevBundleInclusion{
+			bottom: RequestInclusion{
 				BlockNumber: hexutil.Uint64(3),
 				MaxBlock:    hexutil.Uint64(4),
 			},
-			expectedTop: MevBundleInclusion{
+			expectedTop: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(2),
 			},
@@ -112,15 +112,15 @@ func TestMergeInclusionIntervals(t *testing.T) {
 		},
 		{
 			name: "no overlap, top to the left",
-			top: MevBundleInclusion{
+			top: RequestInclusion{
 				BlockNumber: hexutil.Uint64(3),
 				MaxBlock:    hexutil.Uint64(4),
 			},
-			bottom: MevBundleInclusion{
+			bottom: RequestInclusion{
 				BlockNumber: hexutil.Uint64(1),
 				MaxBlock:    hexutil.Uint64(2),
 			},
-			expectedTop: MevBundleInclusion{
+			expectedTop: RequestInclusion{
 				BlockNumber: hexutil.Uint64(3),
 				MaxBlock:    hexutil.Uint64(4),
 			},

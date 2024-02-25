@@ -119,7 +119,7 @@ func RoundUpWithPrecision(number *big.Int, precisionDigits int) *big.Int {
 	return result
 }
 
-func newerInclusion(old, newBundle *SendMevBundleArgs) bool {
+func newerInclusion(old, newBundle *SendRequestArgs) bool {
 	if old == nil {
 		return true
 	}

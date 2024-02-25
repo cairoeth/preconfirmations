@@ -9,7 +9,6 @@ import (
 	"net/http/pprof"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -25,7 +24,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/time/rate"
 )
 
 var (
@@ -34,31 +32,29 @@ var (
 	// Simqueue is configured using its own env variables, see `simqueue` package.
 
 	// Default values
-	defaultDebug                 = os.Getenv("DEBUG") == "1"
-	defaultLogProd               = os.Getenv("LOG_PROD") == "1"
-	defaultLogService            = os.Getenv("LOG_SERVICE")
-	defaultPort                  = cli.GetEnv("PORT", "8080")
-	defaultMetricsPort           = cli.GetEnv("METRICS_PORT", "8088")
-	defaultChannelName           = cli.GetEnv("REDIS_CHANNEL_NAME", "hints")
-	defaultRedisEndpoint         = cli.GetEnv("REDIS_ENDPOINT", "redis://localhost:6379")
-	defaultSimulationsEndpoint   = cli.GetEnv("SIMULATION_ENDPOINTS", "http://127.0.0.1:8545")
-	defaultWorkersPerNode        = cli.GetEnv("WORKERS_PER_SIM_ENDPOINT", "2")
-	defaultPostgresDSN           = cli.GetEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
-	defaultEthEndpoint           = cli.GetEnv("ETH_ENDPOINT", "http://127.0.0.1:8545")
-	defaultMevSimBundleRateLimit = cli.GetEnv("MEV_SIM_BUNDLE_RATE_LIMIT", "5")
+	defaultDebug               = os.Getenv("DEBUG") == "1"
+	defaultLogProd             = os.Getenv("LOG_PROD") == "1"
+	defaultLogService          = os.Getenv("LOG_SERVICE")
+	defaultPort                = cli.GetEnv("PORT", "8080")
+	defaultMetricsPort         = cli.GetEnv("METRICS_PORT", "8088")
+	defaultChannelName         = cli.GetEnv("REDIS_CHANNEL_NAME", "hints")
+	defaultRedisEndpoint       = cli.GetEnv("REDIS_ENDPOINT", "redis://localhost:6379")
+	defaultSimulationsEndpoint = cli.GetEnv("SIMULATION_ENDPOINTS", "http://127.0.0.1:8545")
+	defaultWorkersPerNode      = cli.GetEnv("WORKERS_PER_SIM_ENDPOINT", "2")
+	defaultPostgresDSN         = cli.GetEnv("POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+	defaultEthEndpoint         = cli.GetEnv("ETH_ENDPOINT", "http://127.0.0.1:8545")
 
 	// Flags
-	debugPtr                 = flag.Bool("debug", defaultDebug, "print debug output")
-	logProdPtr               = flag.Bool("log-prod", defaultLogProd, "log in production mode (json)")
-	logServicePtr            = flag.String("log-service", defaultLogService, "'service' tag to logs")
-	portPtr                  = flag.String("port", defaultPort, "port to listen on")
-	channelPtr               = flag.String("channel", defaultChannelName, "redis pub/sub channel name string")
-	redisPtr                 = flag.String("redis", defaultRedisEndpoint, "redis url string")
-	simEndpointPtr           = flag.String("sim-endpoint", defaultSimulationsEndpoint, "simulation endpoints (comma separated)")
-	workersPerNodePtr        = flag.String("workers-per-node", defaultWorkersPerNode, "number of workers per simulation node")
-	postgresDSNPtr           = flag.String("postgres-dsn", defaultPostgresDSN, "postgres dsn")
-	ethPtr                   = flag.String("eth", defaultEthEndpoint, "eth endpoint")
-	meVSimBundleRateLimitPtr = flag.String("mev-sim-bundle-rate-limit", defaultMevSimBundleRateLimit, "mev sim bundle rate limit for external users (calls per second)")
+	debugPtr          = flag.Bool("debug", defaultDebug, "print debug output")
+	logProdPtr        = flag.Bool("log-prod", defaultLogProd, "log in production mode (json)")
+	logServicePtr     = flag.String("log-service", defaultLogService, "'service' tag to logs")
+	portPtr           = flag.String("port", defaultPort, "port to listen on")
+	channelPtr        = flag.String("channel", defaultChannelName, "redis pub/sub channel name string")
+	redisPtr          = flag.String("redis", defaultRedisEndpoint, "redis url string")
+	simEndpointPtr    = flag.String("sim-endpoint", defaultSimulationsEndpoint, "simulation endpoints (comma separated)")
+	workersPerNodePtr = flag.String("workers-per-node", defaultWorkersPerNode, "number of workers per simulation node")
+	postgresDSNPtr    = flag.String("postgres-dsn", defaultPostgresDSN, "postgres dsn")
+	ethPtr            = flag.String("eth", defaultEthEndpoint, "eth endpoint")
 )
 
 func main() {
@@ -144,14 +140,9 @@ func main() {
 	}
 	signer := types.LatestSignerForChainID(chainID)
 
-	rateLimit, err := strconv.ParseFloat(*meVSimBundleRateLimitPtr, 64)
-	if err != nil {
-		logger.Fatal("Failed to parse mev sim bundle rate limit", zap.Error(err))
-	}
-
 	cachingEthBackend := preconshare.NewCachingEthClient(ethBackend)
 
-	api := preconshare.NewAPI(logger, simQueue, dbBackend, cachingEthBackend, signer, simBackends, rate.Limit(rateLimit), cancelCache, time.Millisecond*60)
+	api := preconshare.NewAPI(logger, simQueue, dbBackend, cachingEthBackend, signer, simBackends, cancelCache, time.Millisecond*60)
 
 	jsonRPCServer, err := jsonrpcserver.NewHandler(jsonrpcserver.Methods{
 		preconshare.SendRequestEndpointName:    api.SendRequest,

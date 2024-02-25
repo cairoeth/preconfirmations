@@ -44,7 +44,7 @@ func extractTxHints(tx *types.Transaction, want HintIntent) (hint *TxHint) {
 	return hint
 }
 
-func extractHintsInner(bundle *SendMevBundleArgs) (logs []CleanLog, txs []TxHint, err error) {
+func extractHintsInner(bundle *SendRequestArgs) (logs []CleanLog, txs []TxHint, err error) {
 	var want HintIntent = HintNone
 	if bundle.Privacy != nil {
 		want = bundle.Privacy.Hints
@@ -93,7 +93,7 @@ func extractHintsInner(bundle *SendMevBundleArgs) (logs []CleanLog, txs []TxHint
 	return logs, txs, err
 }
 
-func ExtractHints(bundle *SendMevBundleArgs) (Hint, error) {
+func ExtractHints(bundle *SendRequestArgs) (Hint, error) {
 	var want HintIntent = HintNone
 	if bundle.Privacy != nil {
 		want = bundle.Privacy.Hints

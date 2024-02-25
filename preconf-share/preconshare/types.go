@@ -6,8 +6,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 var (
@@ -98,10 +96,10 @@ func (b *HintIntent) UnmarshalJSON(data []byte) error {
 }
 
 type Hint struct {
-	Hash      common.Hash        `json:"hash"`
-	Inclusion MevBundleInclusion `json:"inclusion"`
-	Logs      []CleanLog         `json:"logs"`
-	Txs       []TxHint           `json:"txs"`
+	Hash      common.Hash      `json:"hash"`
+	Inclusion RequestInclusion `json:"inclusion"`
+	Logs      []CleanLog       `json:"logs"`
+	Txs       []TxHint         `json:"txs"`
 }
 
 type TxHint struct {
@@ -111,50 +109,34 @@ type TxHint struct {
 	CallData         *hexutil.Bytes  `json:"callData,omitempty"`
 }
 
-type SendMevBundleArgs struct {
-	Version   string             `json:"version"`
-	Inclusion MevBundleInclusion `json:"inclusion"`
-	Body      []MevBundleBody    `json:"body"`
-	Validity  MevBundleValidity  `json:"validity"`
-	Privacy   *MevBundlePrivacy  `json:"privacy,omitempty"`
-	Metadata  *MevBundleMetadata `json:"metadata,omitempty"`
+/////////////////////////
+// preconf_sendRequest //
+/////////////////////////
+
+type SendRequestArgs struct {
+	Version   string           `json:"version"`
+	Inclusion RequestInclusion `json:"inclusion"`
+	Body      []RuquestBody    `json:"body"`
+	Privacy   *RequestPrivacy  `json:"privacy,omitempty"`
+	Metadata  *RequestMetadata `json:"metadata,omitempty"`
 }
 
-type MevBundleInclusion struct {
-	BlockNumber hexutil.Uint64 `json:"block"`
+type RequestInclusion struct {
+	BlockNumber hexutil.Uint64 `json:"desiredBlock"`
 	MaxBlock    hexutil.Uint64 `json:"maxBlock"`
 	Tip         hexutil.Uint64 `json:"tip"`
 }
 
-type MevBundleBody struct {
-	Hash      *common.Hash       `json:"hash,omitempty"`
-	Tx        *hexutil.Bytes     `json:"tx,omitempty"`
-	Bundle    *SendMevBundleArgs `json:"bundle,omitempty"`
-	CanRevert bool               `json:"canRevert,omitempty"`
+type RuquestBody struct {
+	Tx *hexutil.Bytes `json:"tx,omitempty"`
 }
 
-type MevBundleValidity struct {
-	Refund       []RefundConstraint `json:"refund,omitempty"`
-	RefundConfig []RefundConfig     `json:"refundConfig,omitempty"`
+type RequestPrivacy struct {
+	Hints    HintIntent `json:"hints,omitempty"`
+	Builders []string   `json:"operators,omitempty"`
 }
 
-type RefundConstraint struct {
-	BodyIdx int `json:"bodyIdx"`
-	Percent int `json:"percent"`
-}
-
-type RefundConfig struct {
-	Address common.Address `json:"address"`
-	Percent int            `json:"percent"`
-}
-
-type MevBundlePrivacy struct {
-	Hints      HintIntent `json:"hints,omitempty"`
-	Builders   []string   `json:"builders,omitempty"`
-	WantRefund *int       `json:"wantRefund,omitempty"`
-}
-
-type MevBundleMetadata struct {
+type RequestMetadata struct {
 	BundleHash   common.Hash    `json:"bundleHash,omitempty"`
 	BodyHashes   []common.Hash  `json:"bodyHashes,omitempty"`
 	Signer       common.Address `json:"signer,omitempty"`
@@ -164,36 +146,13 @@ type MevBundleMetadata struct {
 	Prematched   bool           `json:"prematched"`
 }
 
-type SendMevBundleResponse struct {
+type SendRequestResponse struct {
 	BundleHash common.Hash `json:"bundleHash"`
 }
 
-type SimMevBundleResponse struct {
-	Success         bool             `json:"success"`
-	Error           string           `json:"error,omitempty"`
-	StateBlock      hexutil.Uint64   `json:"stateBlock"`
-	MevGasPrice     hexutil.Big      `json:"mevGasPrice"`
-	Profit          hexutil.Big      `json:"profit"`
-	RefundableValue hexutil.Big      `json:"refundableValue"`
-	GasUsed         hexutil.Uint64   `json:"gasUsed"`
-	BodyLogs        []SimMevBodyLogs `json:"logs,omitempty"`
-}
-
-type SimMevBundleAuxArgs struct {
-	ParentBlock *rpc.BlockNumberOrHash `json:"parentBlock"`
-	// override the default values for the block header
-	BlockNumber *hexutil.Big    `json:"blockNumber"`
-	Coinbase    *common.Address `json:"coinbase"`
-	Timestamp   *hexutil.Uint64 `json:"timestamp"`
-	GasLimit    *hexutil.Uint64 `json:"gasLimit"`
-	BaseFee     *hexutil.Big    `json:"baseFee"`
-	Timeout     *int64          `json:"timeout"`
-}
-
-type SimMevBodyLogs struct {
-	TxLogs     []*types.Log     `json:"txLogs,omitempty"`
-	BundleLogs []SimMevBodyLogs `json:"bundleLogs,omitempty"`
-}
+////////////////////////////
+// preconf_confirmRequest //
+////////////////////////////
 
 type CleanLog struct {
 	// address of the contract that generated the event
@@ -202,12 +161,4 @@ type CleanLog struct {
 	Topics []common.Hash `json:"topics"`
 	// supplied by the contract, usually ABI-encoded
 	Data hexutil.Bytes `json:"data"`
-}
-
-type SendRefundRecBundleArgs struct {
-	BlockNumber       hexutil.Uint64  `json:"blockNumber"`
-	Txs               []hexutil.Bytes `json:"txs"`
-	RevertingTxHashes []common.Hash   `json:"revertingTxHashes,omitempty"`
-	RefundPercent     *int            `json:"refundPercent,omitempty"`
-	RefundRecipient   *common.Address `json:"refundRecipient,omitempty"`
 }
