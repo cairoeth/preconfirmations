@@ -44,6 +44,8 @@ contract PreconfServiceManager is ServiceManagerBase, Pausable {
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Prevent the implementation contract from being initialized.
+    /// @dev The proxy contract state will still be able to call this function because the constructor does not affect the proxy state.
     constructor(IAVSDirectory _avsDirectory, IRegistryCoordinator _registryCoordinator, IStakeRegistry _stakeRegistry)
         ServiceManagerBase(_avsDirectory, _registryCoordinator, _stakeRegistry)
     {

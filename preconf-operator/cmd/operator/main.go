@@ -8,7 +8,7 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
+	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator"
 

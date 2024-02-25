@@ -7,8 +7,8 @@ operator_address: 0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5
 
 # This is the address of the slasher which is deployed in the anvil saved state
 # TODO: automate updating these addresses when we deploy new contracts
-avs_registry_coordinator_address: 0xc3e53F4d16Ae77Db1c982e75a937B9f60FE63690
-operator_state_retriever_address: 0x1613beB3B2C4f22Ee086B2b38C1476A3cE7f78E8
+avs_registry_coordinator_address: 0x9E545E3C0baAB3E08CdfD552C960A1050f373042
+operator_state_retriever_address: 0x4c5859f0F772848b2D91F1D83E2Fe57935348029
 
 # ETH RPC URL
 eth_rpc_url: http://localhost:8545
@@ -38,4 +38,4 @@ enable_node_api: true
 
 register_operator_on_startup: true
 # address of token to deposit tokens into when registering on startup
-token_strategy_addr: 0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f
+token_strategy_addr: 0x4A679253410272dd5232B3Ff7cF5dbB88f295319

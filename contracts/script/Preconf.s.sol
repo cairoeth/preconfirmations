@@ -17,6 +17,7 @@ import {IBLSApkRegistry} from "eigenlayer-middleware/interfaces/IBLSApkRegistry.
 
 import {PreconfChallengeManager} from "src/PreconfChallengeManager.sol";
 import {PreconfServiceManager} from "src/PreconfServiceManager.sol";
+import {ERC20Mock} from "src/ERC20Mock.sol";
 
 import "eigenlayer-scripts/middleware/DeployOpenEigenLayer.s.sol";
 import "forge-std/Test.sol";
@@ -36,7 +37,7 @@ contract DeployPreconf is DeployOpenEigenLayer {
     IStakeRegistry public stakeRegistry;
     OperatorStateRetriever public operatorStateRetriever;
 
-    MockToken token;
+    ERC20Mock token;
 
     struct AddressConfig {
         address eigenLayerCommunityMultisig;
@@ -79,7 +80,7 @@ contract DeployPreconf is DeployOpenEigenLayer {
     function _deployEigenDAAndEigenLayerContracts(address deployer, uint8 numStrategies, uint256 maxOperatorCount)
         internal
     {
-        token = new MockToken();
+        token = new ERC20Mock();
 
         StrategyConfig[] memory strategyConfigs = new StrategyConfig[](1);
 
@@ -201,7 +202,6 @@ contract DeployPreconf is DeployOpenEigenLayer {
 
         eigenDAProxyAdmin.upgradeAndCall(
             TransparentUpgradeableProxy(payable(address(preconfChallengeManager))),
-            // TODO: update address(this) below.
             address(new PreconfChallengeManager()),
             abi.encodeWithSelector(
                 PreconfChallengeManager.initialize.selector, deployer, address(preconfServiceManager), address(0)
@@ -216,13 +216,5 @@ contract DeployPreconf is DeployOpenEigenLayer {
         string memory chainDir = string.concat(vm.toString(block.chainid), "/");
         string memory outputFilePath = string.concat(outputDir, chainDir, outputFileName, ".json");
         vm.writeJson(outputJson, outputFilePath);
-    }
-}
-
-contract MockToken is ERC20 {
-    constructor() ERC20("MockToken", "MOCK") {}
-
-    function mint(address a, uint256 b) public {
-        _mint(a, b);
     }
 }
