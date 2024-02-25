@@ -185,3 +185,95 @@ func (m *API) SendBundle(ctx context.Context, bundle SendMevBundleArgs) (_ SendM
 		BundleHash: hash,
 	}, nil
 }
+
+func (m *API) ConfirmBundle(ctx context.Context, bundle SendMevBundleArgs) (_ SendMevBundleResponse, err error) {
+	logger := m.log
+	startAt := time.Now()
+	defer func() {
+		metrics.RecordRPCCallDuration(ConfirmBundleEndpointName, time.Since(startAt).Milliseconds())
+	}()
+	metrics.IncSbundlesReceived()
+
+	validateBundleTime := time.Now()
+	currentBlock, err := m.eth.BlockNumber(ctx)
+	if err != nil {
+		metrics.IncRPCCallFailure(ConfirmBundleEndpointName)
+		logger.Error("failed to get current block", zap.Error(err))
+		return SendMevBundleResponse{}, ErrInternalServiceError
+	}
+
+	hash, hasUnmatchedHash, err := ValidateBundle(&bundle, currentBlock, m.signer)
+	if err != nil {
+		logger.Warn("failed to validate bundle", zap.Error(err))
+		return SendMevBundleResponse{}, err
+	}
+	if oldBundle, ok := m.knownBundleCache.Get(hash); ok {
+		if !newerInclusion(&oldBundle, &bundle) {
+			logger.Debug("bundle already known, ignoring", zap.String("hash", hash.Hex()))
+			return SendMevBundleResponse{hash}, nil
+		}
+	}
+	m.knownBundleCache.Add(hash, bundle)
+
+	signerAddress := jsonrpcserver.GetSigner(ctx)
+	origin := jsonrpcserver.GetOrigin(ctx)
+	if bundle.Metadata == nil {
+		bundle.Metadata = &MevBundleMetadata{}
+	}
+	bundle.Metadata.Signer = signerAddress
+	bundle.Metadata.ReceivedAt = hexutil.Uint64(uint64(time.Now().UnixMicro()))
+	bundle.Metadata.OriginID = origin
+	bundle.Metadata.Prematched = !hasUnmatchedHash
+
+	metrics.RecordBundleValidationDuration(time.Since(validateBundleTime).Milliseconds())
+
+	if hasUnmatchedHash {
+		var unmatchedHash common.Hash
+		if len(bundle.Body) > 0 && bundle.Body[0].Hash != nil {
+			unmatchedHash = *bundle.Body[0].Hash
+		} else {
+			return SendMevBundleResponse{}, ErrInternalServiceError
+		}
+		fetchUnmatchedTime := time.Now()
+		unmatchedBundle, err := m.spikeManager.GetResult(ctx, unmatchedHash.String())
+		metrics.RecordBundleFetchUnmatchedDuration(time.Since(fetchUnmatchedTime).Milliseconds())
+		if err != nil {
+			logger.Error("Failed to fetch unmatched bundle", zap.Error(err), zap.String("matching_hash", unmatchedHash.Hex()))
+			metrics.IncRPCCallFailure(ConfirmBundleEndpointName)
+			return SendMevBundleResponse{}, ErrBackrunNotFound
+		}
+		if privacy := unmatchedBundle.Privacy; privacy == nil && privacy.Hints.HasHint(HintHash) {
+			// if the unmatched bundle have not configured privacy or has not set the hash hint
+			// then we cannot backrun it
+			return SendMevBundleResponse{}, ErrBackrunInvalidBundle
+		}
+		bundle.Body[0].Bundle = unmatchedBundle
+		bundle.Body[0].Hash = nil
+		// replace matching hash with actual bundle hash
+		findAndReplace(bundle.Metadata.BodyHashes, unmatchedHash, unmatchedBundle.Metadata.BundleHash)
+		// send 90 % of the refund to the unmatched bundle or the suggested refund if set
+		refundPercent := RefundPercent
+		if unmatchedBundle.Privacy != nil && unmatchedBundle.Privacy.WantRefund != nil {
+			refundPercent = *unmatchedBundle.Privacy.WantRefund
+		}
+		bundle.Validity.Refund = []RefundConstraint{{0, refundPercent}}
+		MergePrivacyBuilders(&bundle)
+		err = MergeInclusionIntervals(&bundle.Inclusion, &unmatchedBundle.Inclusion)
+		if err != nil {
+			return SendMevBundleResponse{}, ErrBackrunInclusion
+		}
+	}
+
+	metrics.IncSbundlesReceivedValid()
+	highPriority := jsonrpcserver.GetPriority(ctx)
+	err = m.scheduler.ScheduleBundleSimulation(ctx, &bundle, highPriority)
+	if err != nil {
+		metrics.IncRPCCallFailure(ConfirmBundleEndpointName)
+		logger.Error("Failed to schedule bundle simulation", zap.Error(err))
+		return SendMevBundleResponse{}, ErrInternalServiceError
+	}
+
+	return SendMevBundleResponse{
+		BundleHash: hash,
+	}, nil
+}

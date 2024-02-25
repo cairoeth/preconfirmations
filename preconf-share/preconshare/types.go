@@ -16,7 +16,8 @@ var (
 )
 
 const (
-	SendBundleEndpointName = "preconf_sendBundle"
+	SendBundleEndpointName    = "preconf_sendBundle"
+	ConfirmBundleEndpointName = "preconf_confirmBundle"
 )
 
 // HintIntent is a set of hint intents
@@ -97,11 +98,10 @@ func (b *HintIntent) UnmarshalJSON(data []byte) error {
 }
 
 type Hint struct {
-	Hash        common.Hash     `json:"hash"`
-	Logs        []CleanLog      `json:"logs"`
-	Txs         []TxHint        `json:"txs"`
-	MevGasPrice *hexutil.Big    `json:"mevGasPrice,omitempty"`
-	GasUsed     *hexutil.Uint64 `json:"gasUsed,omitempty"`
+	Hash      common.Hash        `json:"hash"`
+	Inclusion MevBundleInclusion `json:"inclusion"`
+	Logs      []CleanLog         `json:"logs"`
+	Txs       []TxHint           `json:"txs"`
 }
 
 type TxHint struct {
@@ -123,6 +123,7 @@ type SendMevBundleArgs struct {
 type MevBundleInclusion struct {
 	BlockNumber hexutil.Uint64 `json:"block"`
 	MaxBlock    hexutil.Uint64 `json:"maxBlock"`
+	Tip         hexutil.Uint64 `json:"tip"`
 }
 
 type MevBundleBody struct {

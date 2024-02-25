@@ -120,6 +120,7 @@ func ExtractHints(bundle *SendMevBundleArgs) (Hint, error) {
 	}
 	hint.Logs = logs
 	hint.Txs = txs
+	hint.Inclusion = bundle.Inclusion
 
 	return hint, nil
 }

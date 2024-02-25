@@ -99,14 +99,6 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 				logger.Error("Failed to process hints", zap.Error(err))
 			}
 		}
-
-		// 	start = time.Now()
-		// 	err = s.store.InsertBundleForBuilder(ctx, bundle, sim, uint64(sim.StateBlock)+1)
-		// 	logger.Debug("Inserted bundle for builder", zap.Duration("duration", time.Since(start)), zap.Error(err))
-		// 	if err != nil {
-		// 		logger.Error("Failed to insert bundle for builder", zap.Error(err))
-		// 	}
-		// }
 	}()
 
 	// check bundle mev priority fee
@@ -114,15 +106,6 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 	if isZeroFee {
 		logger.Debug("Bundle has zero priority fee, skipping builder")
 	}
-
-	// failed bundles are not sent to builders, we also don't send single-tx bundles with zero priority fee
-	// if sim.Success && !isZeroFee {
-	// 	wg.Add(1)
-	// 	go func() {
-	// 		defer wg.Done()
-	// 		s.builders.SendBundle(ctx, logger, bundle, uint64(sim.StateBlock)+1)
-	// 	}()
-	// }
 
 	wg.Wait()
 	log.Info("Bundle processed", zap.String("bundle", hash.Hex()), zap.Duration("duration", time.Since(start)))
