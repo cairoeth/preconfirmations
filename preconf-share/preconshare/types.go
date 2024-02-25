@@ -16,8 +16,7 @@ var (
 )
 
 const (
-	SendBundleEndpointName = "mev_sendBundle"
-	SimBundleEndpointName  = "mev_simBundle"
+	SendBundleEndpointName = "preconf_sendBundle"
 )
 
 // HintIntent is a set of hint intents

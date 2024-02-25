@@ -8,9 +8,9 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/config"
-	"github.com/Layr-Labs/incredible-squaring-avs/types"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator"
+	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/config"
+	"github.com/cairoeth/preconfirmations-avs/preconf-operator/types"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )

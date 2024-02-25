@@ -57,9 +57,12 @@ contract DeployPreconf is DeployOpenEigenLayer {
 
         _deployEigenDAAndEigenLayerContracts(deployer, 1, type(uint128).max);
 
+        // Fund operator
+        payable(address(0x860B6912C2d0337ef05bbC89b0C2CB6CbAEAB4A5)).transfer(500 ether);
+
         vm.stopBroadcast();
 
-        // WRITE JSON DATA
+        // Write JSON output
         string memory parent_object = "parent object";
 
         string memory deployed_addresses = "addresses";
@@ -209,6 +212,15 @@ contract DeployPreconf is DeployOpenEigenLayer {
         );
 
         operatorStateRetriever = new OperatorStateRetriever();
+
+        {
+            IStrategy[] memory strategies = new IStrategy[](numStrategies);
+            bool[] memory transferLocks = new bool[](numStrategies);
+            for (uint8 i = 0; i < numStrategies; i++) {
+                strategies[i] = deployedStrategyArray[i];
+            }
+            strategyManager.addStrategiesToDepositWhitelist(strategies, transferLocks);
+        }
     }
 
     function writeOutput(string memory outputJson, string memory outputFileName) internal {

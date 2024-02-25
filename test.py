@@ -8,7 +8,7 @@ private_key = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff8
 account = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 nonce = web3.eth.get_transaction_count(account)
 
-tx = {'nonce': nonce, 'to': account, 'value': web3.to_wei(10, 'ether'), 'gas': 25000, 'gasPrice': web3.to_wei(50, 'gwei')}
+tx = {'nonce': nonce, 'to': account, 'value': web3.to_wei(0.333, 'ether'), 'gas': 25000, 'gasPrice': web3.to_wei(50, 'gwei')}
 signed_tx = web3.eth.account.sign_transaction(tx, private_key).rawTransaction.hex()
 block = str(hex(web3.eth.block_number + 1))
 print(block)
@@ -58,7 +58,7 @@ while True:
                     }
                 }
             ],
-            "method": "mev_sendBundle",
+            "method": "preconf_sendBundle",
             "id": 1,
             "jsonrpc": "2.0"
         })

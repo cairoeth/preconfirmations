@@ -9,16 +9,16 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
-	erc20mock "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/ERC20Mock"
-	csservicemanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringServiceManager"
-	cstaskmanager "github.com/Layr-Labs/incredible-squaring-avs/contracts/bindings/IncredibleSquaringTaskManager"
+	erc20mock "github.com/cairoeth/preconfirmations-avs/contracts/bindings/ERC20Mock"
+	preconfchallengemanager "github.com/cairoeth/preconfirmations-avs/contracts/bindings/PreconfChallengeManager"
+	preconfservicemanager "github.com/cairoeth/preconfirmations-avs/contracts/bindings/PreconfServiceManager"
 )
 
 type AvsManagersBindings struct {
-	TaskManager    *cstaskmanager.ContractIncredibleSquaringTaskManager
-	ServiceManager *csservicemanager.ContractIncredibleSquaringServiceManager
-	ethClient      eth.EthClient
-	logger         logging.Logger
+	ChallengeManager *preconfchallengemanager.ContractPreconfChallengeManager
+	ServiceManager   *preconfservicemanager.ContractPreconfServiceManager
+	ethClient        eth.EthClient
+	logger           logging.Logger
 }
 
 func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethclient eth.EthClient, logger logging.Logger) (*AvsManagersBindings, error) {
@@ -30,28 +30,28 @@ func NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr 
 	if err != nil {
 		return nil, err
 	}
-	contractServiceManager, err := csservicemanager.NewContractIncredibleSquaringServiceManager(serviceManagerAddr, ethclient)
+	contractServiceManager, err := preconfservicemanager.NewContractPreconfServiceManager(serviceManagerAddr, ethclient)
 	if err != nil {
 		logger.Error("Failed to fetch IServiceManager contract", "err", err)
 		return nil, err
 	}
 
-	taskManagerAddr, err := contractServiceManager.IncredibleSquaringTaskManager(&bind.CallOpts{})
+	taskManagerAddr, err := contractServiceManager.ChallengeManager(&bind.CallOpts{})
 	if err != nil {
-		logger.Error("Failed to fetch TaskManager address", "err", err)
+		logger.Error("Failed to fetch ChallengeManager address", "err", err)
 		return nil, err
 	}
-	contractTaskManager, err := cstaskmanager.NewContractIncredibleSquaringTaskManager(taskManagerAddr, ethclient)
+	contractChallengeManager, err := preconfchallengemanager.NewContractPreconfChallengeManager(taskManagerAddr, ethclient)
 	if err != nil {
-		logger.Error("Failed to fetch IIncredibleSquaringTaskManager contract", "err", err)
+		logger.Error("Failed to fetch IChallengeManager contract", "err", err)
 		return nil, err
 	}
 
 	return &AvsManagersBindings{
-		ServiceManager: contractServiceManager,
-		TaskManager:    contractTaskManager,
-		ethClient:      ethclient,
-		logger:         logger,
+		ServiceManager:   contractServiceManager,
+		ChallengeManager: contractChallengeManager,
+		ethClient:        ethclient,
+		logger:           logger,
 	}, nil
 }
 

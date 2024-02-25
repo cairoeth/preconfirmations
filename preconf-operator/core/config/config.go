@@ -29,9 +29,7 @@ type Config struct {
 	// we need the url for the eigensdk currently... eventually standardize api so as to
 	// only take an ethclient or an rpcUrl (and build the ethclient at each constructor site)
 	EthHttpRpcUrl                             string
-	EthWsRpcUrl                               string
 	EthHttpClient                             eth.EthClient
-	EthWsClient                               eth.EthClient
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
 	AggregatorServerIpPortAddr                string
@@ -46,7 +44,6 @@ type Config struct {
 type ConfigRaw struct {
 	Environment                sdklogging.LogLevel `yaml:"environment"`
 	EthRpcUrl                  string              `yaml:"eth_rpc_url"`
-	EthWsUrl                   string              `yaml:"eth_ws_url"`
 	AggregatorServerIpPortAddr string              `yaml:"aggregator_server_ip_port_address"`
 	RegisterOperatorOnStartup  bool                `yaml:"register_operator_on_startup"`
 }
@@ -64,7 +61,6 @@ type IncredibleSquaringContractsRaw struct {
 // Note: This config is shared by challenger and aggregator and so we put in the core.
 // Operator has a different config and is meant to be used by the operator CLI.
 func NewConfig(ctx *cli.Context) (*Config, error) {
-
 	var configRaw ConfigRaw
 	configFilePath := ctx.GlobalString(ConfigFileFlag.Name)
 	if configFilePath != "" {
@@ -86,12 +82,6 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	ethRpcClient, err := eth.NewClient(configRaw.EthRpcUrl)
 	if err != nil {
 		logger.Errorf("Cannot create http ethclient", "err", err)
-		return nil, err
-	}
-
-	ethWsClient, err := eth.NewClient(configRaw.EthWsUrl)
-	if err != nil {
-		logger.Errorf("Cannot create ws ethclient", "err", err)
 		return nil, err
 	}
 
@@ -126,10 +116,8 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 	config := &Config{
 		EcdsaPrivateKey:            ecdsaPrivateKey,
 		Logger:                     logger,
-		EthWsRpcUrl:                configRaw.EthWsUrl,
 		EthHttpRpcUrl:              configRaw.EthRpcUrl,
 		EthHttpClient:              ethRpcClient,
-		EthWsClient:                ethWsClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
 		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,
