@@ -10,7 +10,7 @@ cd "$parent_path"
 # start an anvil instance in the background that has eigenlayer contracts deployed
 anvil --load-state eigenlayer-deployed-anvil-state.json --dump-state avs-and-eigenlayer-deployed-anvil-state.json &
 cd ../../contracts
-forge script script/IncredibleSquaringDeployer.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -v
+forge script script/Preconf.s.sol:DeployPreconf --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast -v
 # save the block-number in the genesis file which we also need to restart the anvil chain at the correct block
 # otherwise the indexRegistry has a quorumUpdate at a high block number, and when we restart a clean anvil (without genesis.json) file
 # it starts at block 0, and so calling getOperatorListAtBlockNumber reverts because it thinks there are no quorums registered at block 0

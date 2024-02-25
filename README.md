@@ -32,5 +32,5 @@ make && ./build/node
 ### Deploy
 
 ```bash
-forge script script/PreconfDeploy.s.sol:PreconfDeploy --rpc-url $RPC_URL --broadcast -vvvv
+forge script script/Preconf.s.sol:DeployPreconf --rpc-url http://127.0.0.1:8545 --broadcast
 ```
