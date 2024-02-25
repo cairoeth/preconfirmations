@@ -1,7 +1,7 @@
 # 🔌 Preconfirmations AVS 
 
 
-## Precon-Share
+## Preconf-Share
 
 ### Dependencies
 
@@ -10,7 +10,7 @@
 
 ### Configuration
 
-The full list of configuration options can be found in [precon-share/cmd/node/main.go](precon-share/cmd/node/main.go).
+The full list of configuration options can be found in [preconf-share/cmd/node/main.go](preconf-share/cmd/node/main.go).
 
 ### Running Locally
 
@@ -18,7 +18,7 @@ The full list of configuration options can be found in [precon-share/cmd/node/ma
 docker-compose up # start services: redis and postgres
 
 # apply migration
-for file in precon-share/sql/*.sql; do psql "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -f $file; done
+for file in preconf-share/sql/*.sql; do psql "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -f $file; done
 
 # run blockchain
 anvil

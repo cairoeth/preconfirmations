@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/VictoriaMetrics/metrics"
-	"github.com/cairoeth/preconfirmations-avs/precon-share/jsonrpcserver"
-	"github.com/cairoeth/preconfirmations-avs/precon-share/preconshare"
-	"github.com/cairoeth/preconfirmations-avs/precon-share/simqueue"
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/jsonrpcserver"
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/preconshare"
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/simqueue"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/flashbots/go-utils/cli"

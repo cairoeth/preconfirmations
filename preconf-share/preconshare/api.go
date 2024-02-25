@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/precon-share/jsonrpcserver"
-	"github.com/cairoeth/preconfirmations-avs/precon-share/metrics"
-	"github.com/cairoeth/preconfirmations-avs/precon-share/spike"
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/jsonrpcserver"
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/metrics"
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/spike"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/common/lru"

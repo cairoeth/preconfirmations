@@ -8,13 +8,13 @@ v:
 clean:
 	rm -rf build/
 
-# Precon-Share
+# Preconf-Share
 build-share:
-	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/node precon-share/cmd/node/main.go
+	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/node preconf-share/cmd/node/main.go
 
-# Precon-Operator
+# Preconf-Operator
 build-operator:
-	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/operator precon-operator/cmd/operator/main.go
+	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/operator preconf-operator/cmd/operator/main.go
 
 test:
 	go test ./...

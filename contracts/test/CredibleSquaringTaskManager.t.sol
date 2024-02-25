@@ -1,46 +1,61 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.12;
 
-import "../src/IncredibleSquaringServiceManager.sol" as incsqsm;
-import {IncredibleSquaringTaskManager} from "../src/IncredibleSquaringTaskManager.sol";
-import {BLSMockAVSDeployer} from "@eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
-import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "openzeppelin/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-contract IncredibleSquaringTaskManagerTest is BLSMockAVSDeployer {
-    incsqsm.IncredibleSquaringServiceManager sm;
-    incsqsm.IncredibleSquaringServiceManager smImplementation;
-    IncredibleSquaringTaskManager tm;
-    IncredibleSquaringTaskManager tmImplementation;
+import {BLSMockAVSDeployer} from "eigenlayer-middleware/test/utils/BLSMockAVSDeployer.sol";
 
-    uint32 public constant TASK_RESPONSE_WINDOW_BLOCK = 30;
-    address aggregator = address(uint160(uint256(keccak256(abi.encodePacked("aggregator")))));
-    address generator = address(uint160(uint256(keccak256(abi.encodePacked("generator")))));
+import {ChallengeManager} from "src/ChallengeManager.sol";
+import {ServiceManager} from "src/ServiceManager.sol";
+
+contract TestPreconfirmations is BLSMockAVSDeployer {
+    /*//////////////////////////////////////////////////////////////
+                                CONTRACTS
+    //////////////////////////////////////////////////////////////*/
+
+    ChallengeManager public challenge;
+    ServiceManager public service;
+
+    /*//////////////////////////////////////////////////////////////
+                                 HELPERS
+    //////////////////////////////////////////////////////////////*/
 
     function setUp() public {
         _setUpBLSMockAVSDeployer();
 
-        tmImplementation = new IncredibleSquaringTaskManager(
-            incsqsm.IRegistryCoordinator(address(registryCoordinator)), TASK_RESPONSE_WINDOW_BLOCK
-        );
+        ChallengeManager challengeImplementation = new ChallengeManager();
 
-        // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        tm = IncredibleSquaringTaskManager(
+        challenge = ChallengeManager(
             address(
                 new TransparentUpgradeableProxy(
-                    address(tmImplementation),
+                    address(challengeImplementation),
                     address(proxyAdmin),
-                    abi.encodeWithSelector(
-                        tm.initialize.selector, pauserRegistry, registryCoordinatorOwner, aggregator, generator
-                    )
+                    abi.encodeWithSelector(ChallengeManager.initialize.selector, address(this), address(this))
                 )
             )
         );
+
+        service = new ServiceManager(avsDirectory, registryCoordinator, stakeRegistry, challenge);
     }
 
-    function testCreateNewTask() public {
-        bytes memory quorumNumbers = new bytes(0);
-        cheats.prank(generator, generator);
-        tm.createNewTask(2, 100, quorumNumbers);
-        assertEq(tm.latestTaskNum(), 1);
+    /*//////////////////////////////////////////////////////////////
+                                TESTS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Unit test to check that the ChallengeManager has the variables set correctly.
+    function testChallengeManager() public {
+        assertEq(challenge.prover(), address(this));
+        assertEq(challenge.serviceManager(), address(service));
+    }
+
+    /// @notice Unit test to check that the ServiceManager has the variables set correctly.
+    function testServiceManager() public {
+        assertEq(address(service.challengeManager()), address(challenge));
+    }
+
+    /// @notice Unit test to check that only ChallengeManager can call the slash function.
+    function testUnauthorizedSlash() public {
+        vm.expectRevert(abi.encodeWithSelector(ServiceManager.NotChallengeManager.selector));
+        service.freezeOperator(address(0));
     }
 }

@@ -1,4 +1,4 @@
-// Package preconshare implements Precon-Share node
+// Package preconshare implements Preconf-Share node
 // Here is a full flow of data through the node:
 //
 // bundle-relay-api -> API sends:

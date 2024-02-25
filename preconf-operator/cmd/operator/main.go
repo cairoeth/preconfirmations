@@ -10,7 +10,7 @@ import (
 
 	"github.com/Layr-Labs/incredible-squaring-avs/core/config"
 	"github.com/Layr-Labs/incredible-squaring-avs/types"
-	"github.com/cairoeth/preconfirmations-avs/precon-operator"
+	"github.com/cairoeth/preconfirmations-avs/preconf-operator"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )
@@ -18,9 +18,9 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Flags = []cli.Flag{config.ConfigFileFlag}
-	app.Name = "precon-operator"
+	app.Name = "preconf-operator"
 	app.Usage = "Preconfirmations Operator"
-	app.Description = "Service that subcribes to Precon-Share and sends preconfirmations."
+	app.Description = "Service that subcribes to Preconf-Share and sends preconfirmations."
 
 	app.Action = operatorMain
 	err := app.Run(os.Args)
