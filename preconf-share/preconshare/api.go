@@ -94,18 +94,18 @@ func findAndReplace(strs []common.Hash, old, replacer common.Hash) bool {
 	return found
 }
 
-func (m *API) SendBundle(ctx context.Context, bundle SendMevBundleArgs) (_ SendMevBundleResponse, err error) {
+func (m *API) SendRequest(ctx context.Context, bundle SendMevBundleArgs) (_ SendMevBundleResponse, err error) {
 	logger := m.log
 	startAt := time.Now()
 	defer func() {
-		metrics.RecordRPCCallDuration(SendBundleEndpointName, time.Since(startAt).Milliseconds())
+		metrics.RecordRPCCallDuration(SendRequestEndpointName, time.Since(startAt).Milliseconds())
 	}()
 	metrics.IncSbundlesReceived()
 
 	validateBundleTime := time.Now()
 	currentBlock, err := m.eth.BlockNumber(ctx)
 	if err != nil {
-		metrics.IncRPCCallFailure(SendBundleEndpointName)
+		metrics.IncRPCCallFailure(SendRequestEndpointName)
 		logger.Error("failed to get current block", zap.Error(err))
 		return SendMevBundleResponse{}, ErrInternalServiceError
 	}
@@ -147,7 +147,7 @@ func (m *API) SendBundle(ctx context.Context, bundle SendMevBundleArgs) (_ SendM
 		metrics.RecordBundleFetchUnmatchedDuration(time.Since(fetchUnmatchedTime).Milliseconds())
 		if err != nil {
 			logger.Error("Failed to fetch unmatched bundle", zap.Error(err), zap.String("matching_hash", unmatchedHash.Hex()))
-			metrics.IncRPCCallFailure(SendBundleEndpointName)
+			metrics.IncRPCCallFailure(SendRequestEndpointName)
 			return SendMevBundleResponse{}, ErrBackrunNotFound
 		}
 		if privacy := unmatchedBundle.Privacy; privacy == nil && privacy.Hints.HasHint(HintHash) {
@@ -176,7 +176,7 @@ func (m *API) SendBundle(ctx context.Context, bundle SendMevBundleArgs) (_ SendM
 	highPriority := jsonrpcserver.GetPriority(ctx)
 	err = m.scheduler.ScheduleBundleSimulation(ctx, &bundle, highPriority)
 	if err != nil {
-		metrics.IncRPCCallFailure(SendBundleEndpointName)
+		metrics.IncRPCCallFailure(SendRequestEndpointName)
 		logger.Error("Failed to schedule bundle simulation", zap.Error(err))
 		return SendMevBundleResponse{}, ErrInternalServiceError
 	}
@@ -186,18 +186,18 @@ func (m *API) SendBundle(ctx context.Context, bundle SendMevBundleArgs) (_ SendM
 	}, nil
 }
 
-func (m *API) ConfirmBundle(ctx context.Context, bundle SendMevBundleArgs) (_ SendMevBundleResponse, err error) {
+func (m *API) ConfirmRequest(ctx context.Context, bundle SendMevBundleArgs) (_ SendMevBundleResponse, err error) {
 	logger := m.log
 	startAt := time.Now()
 	defer func() {
-		metrics.RecordRPCCallDuration(ConfirmBundleEndpointName, time.Since(startAt).Milliseconds())
+		metrics.RecordRPCCallDuration(ConfirmRequestEndpointName, time.Since(startAt).Milliseconds())
 	}()
 	metrics.IncSbundlesReceived()
 
 	validateBundleTime := time.Now()
 	currentBlock, err := m.eth.BlockNumber(ctx)
 	if err != nil {
-		metrics.IncRPCCallFailure(ConfirmBundleEndpointName)
+		metrics.IncRPCCallFailure(ConfirmRequestEndpointName)
 		logger.Error("failed to get current block", zap.Error(err))
 		return SendMevBundleResponse{}, ErrInternalServiceError
 	}
@@ -239,7 +239,7 @@ func (m *API) ConfirmBundle(ctx context.Context, bundle SendMevBundleArgs) (_ Se
 		metrics.RecordBundleFetchUnmatchedDuration(time.Since(fetchUnmatchedTime).Milliseconds())
 		if err != nil {
 			logger.Error("Failed to fetch unmatched bundle", zap.Error(err), zap.String("matching_hash", unmatchedHash.Hex()))
-			metrics.IncRPCCallFailure(ConfirmBundleEndpointName)
+			metrics.IncRPCCallFailure(ConfirmRequestEndpointName)
 			return SendMevBundleResponse{}, ErrBackrunNotFound
 		}
 		if privacy := unmatchedBundle.Privacy; privacy == nil && privacy.Hints.HasHint(HintHash) {
@@ -268,7 +268,7 @@ func (m *API) ConfirmBundle(ctx context.Context, bundle SendMevBundleArgs) (_ Se
 	highPriority := jsonrpcserver.GetPriority(ctx)
 	err = m.scheduler.ScheduleBundleSimulation(ctx, &bundle, highPriority)
 	if err != nil {
-		metrics.IncRPCCallFailure(ConfirmBundleEndpointName)
+		metrics.IncRPCCallFailure(ConfirmRequestEndpointName)
 		logger.Error("Failed to schedule bundle simulation", zap.Error(err))
 		return SendMevBundleResponse{}, ErrInternalServiceError
 	}

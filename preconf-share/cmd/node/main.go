@@ -154,8 +154,8 @@ func main() {
 	api := preconshare.NewAPI(logger, simQueue, dbBackend, cachingEthBackend, signer, simBackends, rate.Limit(rateLimit), cancelCache, time.Millisecond*60)
 
 	jsonRPCServer, err := jsonrpcserver.NewHandler(jsonrpcserver.Methods{
-		preconshare.SendBundleEndpointName:    api.SendBundle,
-		preconshare.ConfirmBundleEndpointName: api.ConfirmBundle,
+		preconshare.SendRequestEndpointName:    api.SendRequest,
+		preconshare.ConfirmRequestEndpointName: api.ConfirmRequest,
 	})
 	if err != nil {
 		logger.Fatal("Failed to create jsonrpc server", zap.Error(err))

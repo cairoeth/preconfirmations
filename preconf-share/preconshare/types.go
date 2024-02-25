@@ -16,8 +16,8 @@ var (
 )
 
 const (
-	SendBundleEndpointName    = "preconf_sendBundle"
-	ConfirmBundleEndpointName = "preconf_confirmBundle"
+	SendRequestEndpointName    = "preconf_sendRequest"
+	ConfirmRequestEndpointName = "preconf_confirmRequest"
 )
 
 // HintIntent is a set of hint intents
