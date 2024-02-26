@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	consumeSimulationTimeout = 5 * time.Second
+	consumeSimulationTimeout = 15 * time.Second
 	simCacheTimeout          = 1 * time.Second
 )
 
@@ -103,16 +103,16 @@ func (q *SimQueue) Start(ctx context.Context) *sync.WaitGroup {
 	return wg
 }
 
-func (q *SimQueue) ScheduleBundleSimulation(ctx context.Context, bundle *SendRequestArgs, highPriority bool) error {
+func (q *SimQueue) ScheduleRequest(ctx context.Context, request *SendRequestArgs, highPriority bool) error {
 	startAt := time.Now()
 	defer func() {
-		metrics.RecordBundleAddQueueDuration(time.Since(startAt).Milliseconds())
+		metrics.RecordRequestAddQueueDuration(time.Since(startAt).Milliseconds())
 	}()
-	data, err := json.Marshal(bundle)
+	data, err := json.Marshal(request)
 	if err != nil {
 		return err
 	}
-	return q.queue.Push(ctx, data, highPriority, uint64(bundle.Inclusion.BlockNumber), uint64(bundle.Inclusion.MaxBlock))
+	return q.queue.Push(ctx, data, highPriority, uint64(request.Inclusion.DesiredBlock), uint64(request.Inclusion.MaxBlock))
 }
 
 type SimulationWorker struct {
@@ -137,7 +137,7 @@ func (w *SimulationWorker) Process(ctx context.Context, data []byte, info simque
 
 	var hash common.Hash
 	if bundle.Metadata != nil {
-		hash = bundle.Metadata.BundleHash
+		hash = bundle.Metadata.RequestHash
 	}
 	logger := w.log.With(zap.String("bundle", hash.Hex()))
 
@@ -173,7 +173,7 @@ func (w *SimulationWorker) isBundleCancelled(ctx context.Context, bundle *SendRe
 		w.log.Error("Bundle has no metadata, skipping cancel check")
 		return false, nil
 	}
-	res, err := w.cancelCache.IsCancelled(ctx, append([]common.Hash{bundle.Metadata.BundleHash}, bundle.Metadata.BodyHashes...))
+	res, err := w.cancelCache.IsCancelled(ctx, append([]common.Hash{bundle.Metadata.RequestHash}, bundle.Metadata.BodyHashes...))
 	if err != nil {
 		return false, err
 	}

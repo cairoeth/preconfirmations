@@ -85,6 +85,6 @@ func RecordBundleFetchUnmatchedDuration(duration int64) {
 	sbundleFetchUnmatchedDurationSummary.Update(float64(duration))
 }
 
-func RecordBundleAddQueueDuration(duration int64) {
+func RecordRequestAddQueueDuration(duration int64) {
 	sbundleAddQueueDurationSummary.Update(float64(duration))
 }

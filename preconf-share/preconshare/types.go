@@ -116,28 +116,28 @@ type TxHint struct {
 type SendRequestArgs struct {
 	Version   string           `json:"version"`
 	Inclusion RequestInclusion `json:"inclusion"`
-	Body      []RuquestBody    `json:"body"`
+	Body      []RequestBody    `json:"body"`
 	Privacy   *RequestPrivacy  `json:"privacy,omitempty"`
 	Metadata  *RequestMetadata `json:"metadata,omitempty"`
 }
 
 type RequestInclusion struct {
-	BlockNumber hexutil.Uint64 `json:"desiredBlock"`
-	MaxBlock    hexutil.Uint64 `json:"maxBlock"`
-	Tip         hexutil.Uint64 `json:"tip"`
+	DesiredBlock hexutil.Uint64 `json:"desiredBlock"`
+	MaxBlock     hexutil.Uint64 `json:"maxBlock"`
+	Tip          hexutil.Uint64 `json:"tip"`
 }
 
-type RuquestBody struct {
+type RequestBody struct {
 	Tx *hexutil.Bytes `json:"tx,omitempty"`
 }
 
 type RequestPrivacy struct {
-	Hints    HintIntent `json:"hints,omitempty"`
-	Builders []string   `json:"operators,omitempty"`
+	Hints     HintIntent `json:"hints,omitempty"`
+	Operators []string   `json:"operators,omitempty"`
 }
 
 type RequestMetadata struct {
-	BundleHash   common.Hash    `json:"bundleHash,omitempty"`
+	RequestHash  common.Hash    `json:"requestHash,omitempty"`
 	BodyHashes   []common.Hash  `json:"bodyHashes,omitempty"`
 	Signer       common.Address `json:"signer,omitempty"`
 	OriginID     string         `json:"originId,omitempty"`
@@ -147,12 +147,27 @@ type RequestMetadata struct {
 }
 
 type SendRequestResponse struct {
-	BundleHash common.Hash `json:"bundleHash"`
+	RequestHash common.Hash `json:"requestHash"`
 }
 
 ////////////////////////////
 // preconf_confirmRequest //
 ////////////////////////////
+
+type ConfirmRequestArgs struct {
+	Version   string         `json:"version"`
+	Preconf   ConfirmPreconf `json:"preconf"`
+	Signature *hexutil.Bytes `json:"signature"`
+}
+
+type ConfirmPreconf struct {
+	Request Hint           `json:"request"`
+	Block   hexutil.Uint64 `json:"block"`
+}
+
+type ConfirmRequestResponse struct {
+	Valid bool `json:"valid"`
+}
 
 type CleanLog struct {
 	// address of the contract that generated the event

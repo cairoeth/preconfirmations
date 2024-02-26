@@ -18,12 +18,12 @@ var (
 // MergeInclusionIntervals writes to the topLevel inclusion value of overlap between inner and topLevel
 // or return error if there is no overlap
 func MergeInclusionIntervals(topLevel, inner *RequestInclusion) error {
-	if topLevel.MaxBlock < inner.BlockNumber || inner.MaxBlock < topLevel.BlockNumber {
+	if topLevel.MaxBlock < inner.DesiredBlock || inner.MaxBlock < topLevel.DesiredBlock {
 		return ErrInvalidInclusion
 	}
 
-	if topLevel.BlockNumber < inner.BlockNumber {
-		topLevel.BlockNumber = inner.BlockNumber
+	if topLevel.DesiredBlock < inner.DesiredBlock {
+		topLevel.DesiredBlock = inner.DesiredBlock
 	}
 	if topLevel.MaxBlock > inner.MaxBlock {
 		topLevel.MaxBlock = inner.MaxBlock
@@ -41,9 +41,9 @@ func validateBundleInner(level int, bundle *SendRequestArgs, currentBlock uint64
 
 	// validate inclusion
 	if bundle.Inclusion.MaxBlock == 0 {
-		bundle.Inclusion.MaxBlock = bundle.Inclusion.BlockNumber
+		bundle.Inclusion.MaxBlock = bundle.Inclusion.DesiredBlock
 	}
-	minBlock := uint64(bundle.Inclusion.BlockNumber)
+	minBlock := uint64(bundle.Inclusion.DesiredBlock)
 	maxBlock := uint64(bundle.Inclusion.MaxBlock)
 	if maxBlock < minBlock {
 		return hash, txs, unmatched, ErrInvalidInclusion
@@ -62,6 +62,8 @@ func validateBundleInner(level int, bundle *SendRequestArgs, currentBlock uint64
 	if len(bundle.Body) == 0 {
 		return hash, txs, unmatched, ErrInvalidBundleBodySize
 	}
+
+	// TODO: check that one transaction in the body pays the block.coinbase address and that it matches the tip amount.
 
 	bodyHashes := make([]common.Hash, 0, len(bundle.Body))
 	for _, el := range bundle.Body {
@@ -90,12 +92,6 @@ func validateBundleInner(level int, bundle *SendRequestArgs, currentBlock uint64
 		hash = common.BytesToHash(hasher.Sum(nil))
 	}
 
-	// validate validity
-	if unmatched {
-		// refunds should be empty for unmatched bundles
-		return hash, txs, unmatched, ErrInvalidBundleConstraints
-	}
-
 	// validate privacy
 	if unmatched && bundle.Privacy != nil && bundle.Privacy.Hints != HintNone {
 		return hash, txs, unmatched, ErrInvalidBundlePrivacy
@@ -110,7 +106,7 @@ func validateBundleInner(level int, bundle *SendRequestArgs, currentBlock uint64
 	// clean metadata
 	// clean fields owned by the node
 	bundle.Metadata = &RequestMetadata{}
-	bundle.Metadata.BundleHash = hash
+	bundle.Metadata.RequestHash = hash
 	bundle.Metadata.BodyHashes = bodyHashes
 	matchingHasher := sha3.NewLegacyKeccak256()
 	matchingHasher.Write(hash[:])
@@ -120,7 +116,7 @@ func validateBundleInner(level int, bundle *SendRequestArgs, currentBlock uint64
 	return hash, txs, unmatched, nil
 }
 
-func ValidateBundle(bundle *SendRequestArgs, currentBlock uint64, signer types.Signer) (hash common.Hash, unmatched bool, err error) {
+func ValidateRequest(bundle *SendRequestArgs, currentBlock uint64, signer types.Signer) (hash common.Hash, unmatched bool, err error) {
 	hash, _, unmatched, err = validateBundleInner(0, bundle, currentBlock, signer)
 	return hash, unmatched, err
 }

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -89,23 +90,24 @@ INSERT INTO sbundle_body (hash, element_hash, idx, type)
 VALUES (:hash, :element_hash, :idx, :type)
 ON CONFLICT (hash, idx) DO NOTHING`
 
-type DBSbundleBuilder struct {
-	Hash           []byte         `db:"hash"`
-	Cancelled      bool           `db:"cancelled"`
-	Block          int64          `db:"block"`
-	MaxBlock       int64          `db:"max_block"`
-	SimStateBlock  sql.NullInt64  `db:"sim_state_block"`
-	SimEffGasPrice sql.NullString `db:"sim_eff_gas_price"`
-	SimProfit      sql.NullString `db:"sim_profit"`
-	Body           []byte         `db:"body"`
-	InsertedAt     time.Time      `db:"inserted_at"`
+type DBSpreconf struct {
+	Hash       []byte    `db:"hash"`
+	Block      int64     `db:"block"`
+	Signature  []byte    `db:"signature"`
+	InsertedAt time.Time `db:"inserted_at"`
 }
 
-var insertBundleBuilderQuery = `
-INSERT INTO sbundle_builder (hash, block, max_block, sim_state_block, sim_eff_gas_price, sim_profit, body)
-VALUES (:hash, :block, :max_block, :sim_state_block, :sim_eff_gas_price, :sim_profit, :body)
-ON conflict (hash) DO 
-UPDATE SET block = :block, max_block = :max_block, sim_state_block = :sim_state_block, sim_eff_gas_price = :sim_eff_gas_price, sim_profit = :sim_profit, body = :body`
+var insertPreconfQuery = `
+INSERT INTO spreconf (hash, block, signature)
+VALUES (:hash, :block, :signature)
+ON CONFLICT (signature) DO NOTHING`
+
+var getPreconfQuery = `
+SELECT block, signature
+FROM spreconf
+WHERE hash = $1
+ORDER BY block
+LIMIT 1`
 
 var ErrBundleNotFound = errors.New("bundle not found")
 
@@ -124,12 +126,13 @@ RETURNING id`
 type DBBackend struct {
 	db *sqlx.DB
 
-	insertBundle        *sqlx.NamedStmt
-	getBundle           *sqlx.Stmt
-	insertBuilderBundle *sqlx.NamedStmt
-	cancelBundle        *sqlx.Stmt
-	insertHint          *sqlx.NamedStmt
-	updateBundleSim     *sqlx.NamedStmt
+	insertBundle    *sqlx.NamedStmt
+	getBundle       *sqlx.Stmt
+	insertPreconf   *sqlx.NamedStmt
+	getPreconf      *sqlx.Stmt
+	cancelBundle    *sqlx.Stmt
+	insertHint      *sqlx.NamedStmt
+	updateBundleSim *sqlx.NamedStmt
 }
 
 func NewDBBackend(postgresDSN string) (*DBBackend, error) {
@@ -148,7 +151,11 @@ func NewDBBackend(postgresDSN string) (*DBBackend, error) {
 	if err != nil {
 		return nil, err
 	}
-	insertBuilderBundle, err := db.PrepareNamed(insertBundleBuilderQuery)
+	insertPreconf, err := db.PrepareNamed(insertPreconfQuery)
+	if err != nil {
+		return nil, err
+	}
+	getPreconf, err := db.Preparex(getPreconfQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -167,13 +174,14 @@ func NewDBBackend(postgresDSN string) (*DBBackend, error) {
 	}
 
 	return &DBBackend{
-		db:                  db,
-		insertBundle:        insertBundle,
-		getBundle:           getBundle,
-		insertBuilderBundle: insertBuilderBundle,
-		cancelBundle:        cancelBundle,
-		insertHint:          insertHint,
-		updateBundleSim:     updateBundleSim,
+		db:              db,
+		insertBundle:    insertBundle,
+		getBundle:       getBundle,
+		insertPreconf:   insertPreconf,
+		getPreconf:      getPreconf,
+		cancelBundle:    cancelBundle,
+		insertHint:      insertHint,
+		updateBundleSim: updateBundleSim,
 	}, nil
 }
 
@@ -194,6 +202,24 @@ func (b *DBBackend) GetBundleByMatchingHash(ctx context.Context, hash common.Has
 	return &bundle, nil
 }
 
+func (b *DBBackend) GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, error) {
+	var dbSpreconf DBSpreconf
+	err := b.getPreconf.GetContext(ctx, &dbSpreconf, hash.Bytes())
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil, ErrBundleNotFound
+	} else if err != nil {
+		return nil, nil, err
+	}
+
+	var signature hexutil.Bytes
+	err = json.Unmarshal(dbSpreconf.Signature, &signature)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return &dbSpreconf.Block, &signature, nil
+}
+
 // InsertBundleForStats inserts a bundle into the database.
 // When called for the second time for the known bundle, it will return known = true and update bundle simulation
 // results with the last inserted simulation results.
@@ -202,7 +228,7 @@ func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendReques
 	if bundle.Metadata == nil {
 		return known, ErrNilBundleMetadata
 	}
-	dbBundle.Hash = bundle.Metadata.BundleHash.Bytes()
+	dbBundle.Hash = bundle.Metadata.RequestHash.Bytes()
 	dbBundle.MatchingHash = bundle.Metadata.MatchingHash.Bytes()
 	dbBundle.Signer = bundle.Metadata.Signer.Bytes()
 	dbBundle.AllowMatching = bundle.Privacy != nil && bundle.Privacy.Hints.HasHint(HintHash)
@@ -299,7 +325,7 @@ func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendReques
 				bodyType = 1
 			}
 		}
-		bodyElements[i] = DBSbundleBody{Hash: bundle.Metadata.BundleHash.Bytes(), ElementHash: hash.Bytes(), Idx: i, Type: bodyType}
+		bodyElements[i] = DBSbundleBody{Hash: bundle.Metadata.RequestHash.Bytes(), ElementHash: hash.Bytes(), Idx: i, Type: bodyType}
 	}
 
 	_, err = dbTx.NamedExecContext(ctx, insertBundleBodyQuery, bodyElements)
@@ -312,6 +338,28 @@ func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendReques
 
 func dbIntToEth(i *hexutil.Big) string {
 	return new(big.Rat).SetFrac(i.ToInt(), ethToWei).FloatString(18)
+}
+
+func (b *DBBackend) InsertPreconf(ctx context.Context, preconf *ConfirmRequestArgs) error {
+	var dbPreconf DBSpreconf
+
+	dbPreconf.Hash = preconf.Preconf.Request.Hash.Bytes()
+	dbPreconf.Block = int64(uint64(preconf.Preconf.Block))
+	fmt.Printf("block to db %d \n", dbPreconf.Block)
+	byteSignature, err := json.Marshal(preconf.Signature)
+	if err != nil {
+		return err
+	}
+	dbPreconf.Signature = byteSignature
+
+	fmt.Printf("HIHIHI")
+
+	_, err = b.insertPreconf.ExecContext(ctx, dbPreconf)
+	if err != nil {
+		fmt.Printf("error writing to preconf db")
+		return err
+	}
+	return err
 }
 
 func (b *DBBackend) InsertHistoricalHint(ctx context.Context, currentBlock uint64, hint *Hint) error {

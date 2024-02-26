@@ -3,6 +3,7 @@ package preconshare
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/ybbus/jsonrpc/v3"
@@ -44,6 +45,8 @@ func (b *RedisHintBackend) NotifyHint(ctx context.Context, hint *Hint) error {
 	if err != nil {
 		return err
 	}
+	// print data
+	fmt.Println(string(data))
 	return b.client.Publish(ctx, b.pubChannel, data).Err()
 }
 

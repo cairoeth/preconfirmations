@@ -2,14 +2,12 @@ package preconshare
 
 import (
 	"context"
-	"math/big"
 	"sync"
 	"time"
 
 	"github.com/cairoeth/preconfirmations-avs/preconf-share/simqueue"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"go.uber.org/zap"
 )
 
@@ -22,6 +20,7 @@ type SimulationResult interface {
 type Storage interface {
 	InsertBundleForStats(ctx context.Context, bundle *SendRequestArgs) (known bool, err error)
 	InsertHistoricalHint(ctx context.Context, currentBlock uint64, hint *Hint) error
+	GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, error)
 }
 
 type SimulationResultBackend struct {
@@ -40,24 +39,6 @@ func NewSimulationResultBackend(log *zap.Logger, hint HintBackend, eth EthClient
 	}
 }
 
-func izZeroPriorityFeeTX(bundle *SendRequestArgs) bool {
-	if len(bundle.Body) != 1 {
-		return false // not a single tx bundle
-	}
-	var tx types.Transaction
-	btx := bundle.Body[0]
-	if btx.Tx == nil {
-		return false // incorrect bundle
-	}
-
-	err := tx.UnmarshalBinary(*btx.Tx)
-	if err != nil {
-		return false // incorrect bundle
-	}
-
-	return tx.GasTipCap().Cmp(big.NewInt(0)) == 0
-}
-
 // SimulatedBundle is called when simulation is done
 // NOTE: we return error only if we want to retry the simulation
 func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
@@ -67,7 +48,7 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 
 	var hash common.Hash
 	if bundle.Metadata != nil {
-		hash = bundle.Metadata.BundleHash
+		hash = bundle.Metadata.RequestHash
 	}
 	logger := s.log.With(zap.String("bundle", hash.Hex()))
 
@@ -86,7 +67,6 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 			logger.Error("Failed to insert bundle for stats", zap.Error(err))
 		}
 
-		// if sim.Success {
 		if !knownBundle {
 			start := time.Now()
 			err := s.ProcessHints(ctx, bundle)
@@ -95,16 +75,26 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 				logger.Error("Failed to process hints", zap.Error(err))
 			}
 		}
+
+		logger.Debug("Bundle processed, waiting 100ms for preconfs")
+
+		// sleep 100ms to receive preconfirmations
+		time.Sleep(5 * time.Second)
+	
+		logger.Debug("Wait over, checking preconfs received")
+	
+		// // Fetch preconfirmations from database that match the request hash
+		// block, signature, err := s.store.GetPreconfByMatchingHash(ctx, hash)
+		// if err != nil {
+		// 	logger.Error("Failed to get preconfirmations", zap.Error(err))
+		// }
+	
+		// logger.Info("Preconfirmation found", zap.String("signature", common.Bytes2Hex(*signature)), zap.Uint64("block", uint64(*block)))
 	}()
 
-	// check bundle mev priority fee
-	isZeroFee := izZeroPriorityFeeTX(bundle)
-	if isZeroFee {
-		logger.Debug("Bundle has zero priority fee, skipping builder")
-	}
+	logger.Debug("Request finalized", zap.String("bundle", hash.Hex()), zap.Duration("duration", time.Since(start)))
 
 	wg.Wait()
-	log.Info("Bundle processed", zap.String("bundle", hash.Hex()), zap.Duration("duration", time.Since(start)))
 	return nil
 }
 
@@ -120,6 +110,8 @@ func (s *SimulationResultBackend) ProcessHints(ctx context.Context, bundle *Send
 	if err != nil {
 		return err
 	}
+
+	s.log.Info("Notifying hint", zap.String("hash", extractedHints.Hash.Hex()))
 	err = s.hint.NotifyHint(ctx, &extractedHints)
 	if err != nil {
 		return err

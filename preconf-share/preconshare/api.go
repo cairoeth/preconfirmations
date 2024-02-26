@@ -31,11 +31,12 @@ var (
 )
 
 type SimScheduler interface {
-	ScheduleBundleSimulation(ctx context.Context, bundle *SendRequestArgs, highPriority bool) error
+	ScheduleRequest(ctx context.Context, bundle *SendRequestArgs, highPriority bool) error
 }
 
 type BundleStorage interface {
 	GetBundleByMatchingHash(ctx context.Context, hash common.Hash) (*SendRequestArgs, error)
+	InsertPreconf(ctx context.Context, preconf *ConfirmRequestArgs) error
 }
 
 type EthClient interface {
@@ -91,7 +92,7 @@ func findAndReplace(strs []common.Hash, old, replacer common.Hash) bool {
 	return found
 }
 
-func (m *API) SendRequest(ctx context.Context, bundle SendRequestArgs) (_ SendRequestResponse, err error) {
+func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendRequestResponse, err error) {
 	logger := m.log
 	startAt := time.Now()
 	defer func() {
@@ -107,28 +108,28 @@ func (m *API) SendRequest(ctx context.Context, bundle SendRequestArgs) (_ SendRe
 		return SendRequestResponse{}, ErrInternalServiceError
 	}
 
-	hash, hasUnmatchedHash, err := ValidateBundle(&bundle, currentBlock, m.signer)
+	hash, hasUnmatchedHash, err := ValidateRequest(&request, currentBlock, m.signer)
 	if err != nil {
-		logger.Warn("failed to validate bundle", zap.Error(err))
+		logger.Warn("failed to validate request", zap.Error(err))
 		return SendRequestResponse{}, err
 	}
 	if oldBundle, ok := m.knownBundleCache.Get(hash); ok {
-		if !newerInclusion(&oldBundle, &bundle) {
-			logger.Debug("bundle already known, ignoring", zap.String("hash", hash.Hex()))
+		if !newerInclusion(&oldBundle, &request) {
+			logger.Debug("request already known, ignoring", zap.String("hash", hash.Hex()))
 			return SendRequestResponse{hash}, nil
 		}
 	}
-	m.knownBundleCache.Add(hash, bundle)
+	m.knownBundleCache.Add(hash, request)
 
 	signerAddress := jsonrpcserver.GetSigner(ctx)
 	origin := jsonrpcserver.GetOrigin(ctx)
-	if bundle.Metadata == nil {
-		bundle.Metadata = &RequestMetadata{}
+	if request.Metadata == nil {
+		request.Metadata = &RequestMetadata{}
 	}
-	bundle.Metadata.Signer = signerAddress
-	bundle.Metadata.ReceivedAt = hexutil.Uint64(uint64(time.Now().UnixMicro()))
-	bundle.Metadata.OriginID = origin
-	bundle.Metadata.Prematched = !hasUnmatchedHash
+	request.Metadata.Signer = signerAddress
+	request.Metadata.ReceivedAt = hexutil.Uint64(uint64(time.Now().UnixMicro()))
+	request.Metadata.OriginID = origin
+	request.Metadata.Prematched = !hasUnmatchedHash
 
 	metrics.RecordBundleValidationDuration(time.Since(validateBundleTime).Milliseconds())
 
@@ -171,69 +172,36 @@ func (m *API) SendRequest(ctx context.Context, bundle SendRequestArgs) (_ SendRe
 
 	metrics.IncSbundlesReceivedValid()
 	highPriority := jsonrpcserver.GetPriority(ctx)
-	err = m.scheduler.ScheduleBundleSimulation(ctx, &bundle, highPriority)
+	err = m.scheduler.ScheduleRequest(ctx, &request, highPriority)
 	if err != nil {
 		metrics.IncRPCCallFailure(SendRequestEndpointName)
-		logger.Error("Failed to schedule bundle simulation", zap.Error(err))
+		logger.Error("Failed to schedule request simulation", zap.Error(err))
 		return SendRequestResponse{}, ErrInternalServiceError
 	}
 
 	return SendRequestResponse{
-		BundleHash: hash,
+		RequestHash: hash,
 	}, nil
 }
 
-func (m *API) ConfirmRequest(ctx context.Context, bundle SendRequestArgs) {
-	// logger := m.log
-	// startAt := time.Now()
-	// defer func() {
-	// 	metrics.RecordRPCCallDuration(ConfirmRequestEndpointName, time.Since(startAt).Milliseconds())
-	// }()
-	// metrics.IncSbundlesReceived()
+func (m *API) ConfirmRequest(ctx context.Context, confirmation ConfirmRequestArgs) (_ ConfirmRequestResponse, err error) {
+	logger := m.log
+	startAt := time.Now()
+	defer func() {
+		metrics.RecordRPCCallDuration(ConfirmRequestEndpointName, time.Since(startAt).Milliseconds())
+	}()
 
-	// validateBundleTime := time.Now()
-	// currentBlock, err := m.eth.BlockNumber(ctx)
-	// if err != nil {
-	// 	metrics.IncRPCCallFailure(ConfirmRequestEndpointName)
-	// 	logger.Error("failed to get current block", zap.Error(err))
-	// 	return SendRequestResponse{}, ErrInternalServiceError
-	// }
+	// TODO: validate confirmation (check signature, that is targetted for the current request, etc.)
 
-	// hash, hasUnmatchedHash, err := ValidateBundle(&bundle, currentBlock, m.signer)
-	// if err != nil {
-	// 	logger.Warn("failed to validate bundle", zap.Error(err))
-	// 	return SendRequestResponse{}, err
-	// }
-	// if oldBundle, ok := m.knownBundleCache.Get(hash); ok {
-	// 	if !newerInclusion(&oldBundle, &bundle) {
-	// 		logger.Debug("bundle already known, ignoring", zap.String("hash", hash.Hex()))
-	// 		return SendRequestResponse{hash}, nil
-	// 	}
-	// }
-	// m.knownBundleCache.Add(hash, bundle)
+	// Store preconfirmation in database.
+	err = m.bundleStorage.InsertPreconf(ctx, &confirmation)
+	if err != nil {
+		metrics.IncRPCCallFailure(ConfirmRequestEndpointName)
+		logger.Error("Failed to insert confirmation in db", zap.Error(err))
+		return ConfirmRequestResponse{}, ErrInternalServiceError
+	}
 
-	// signerAddress := jsonrpcserver.GetSigner(ctx)
-	// origin := jsonrpcserver.GetOrigin(ctx)
-	// if bundle.Metadata == nil {
-	// 	bundle.Metadata = &RequestMetadata{}
-	// }
-	// bundle.Metadata.Signer = signerAddress
-	// bundle.Metadata.ReceivedAt = hexutil.Uint64(uint64(time.Now().UnixMicro()))
-	// bundle.Metadata.OriginID = origin
-	// bundle.Metadata.Prematched = !hasUnmatchedHash
-
-	// metrics.RecordBundleValidationDuration(time.Since(validateBundleTime).Milliseconds())
-
-	// metrics.IncSbundlesReceivedValid()
-	// highPriority := jsonrpcserver.GetPriority(ctx)
-	// err = m.scheduler.ScheduleBundleSimulation(ctx, &bundle, highPriority)
-	// if err != nil {
-	// 	metrics.IncRPCCallFailure(ConfirmRequestEndpointName)
-	// 	logger.Error("Failed to schedule bundle simulation", zap.Error(err))
-	// 	return SendRequestResponse{}, ErrInternalServiceError
-	// }
-
-	// return SendRequestResponse{
-	// 	BundleHash: hash,
-	// }, nil
+	return ConfirmRequestResponse{
+		Valid: true,
+	}, nil
 }

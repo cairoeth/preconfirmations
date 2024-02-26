@@ -35,37 +35,18 @@ create table sbundle_body
 create index sbundle_body_hash_idx on sbundle_body (hash);
 create index sbundle_body_body_element_hash_idx on sbundle_body (element_hash);
 
--- sbundle_buidler is used by the builder to query for bundles to build
--- builder is only interested in inclusion part of the bundle and profit that can be made from that bundle
-create table sbundle_builder
+-- spreconf is used by the aggregator to query for preconfirmations for a request
+create table spreconf
 (
-    hash              bytea PRIMARY KEY,
+    hash              bytea,
     block             bigint                   NOT NULL,
-    max_block         bigint                   NOT NULL,
-    cancelled         boolean                  NOT NULL DEFAULT false,
-    sim_state_block   bigint,
-    sim_eff_gas_price numeric(28, 18),
-    sim_profit        numeric(28, 18),
-    body              jsonb                    NOT NULL,
+    signature         bytea PRIMARY KEY                   NOT NULL,
     inserted_at       timestamp with time zone NOT NULL DEFAULT now()
 );
 
-
-create index sbundle_builder_block_idx on sbundle_builder (block, max_block);
-create index sbundle_builder_sim_eff_gas_price_idx on sbundle_builder (sim_eff_gas_price);
-create index sbundle_builder_sim_profit_idx on sbundle_builder (sim_profit);
-create index sbundle_builder_inserted_at_idx on sbundle_builder (inserted_at);
-
-create table sbundle_builder_used
-(
-    block_id bigint references built_blocks (block_id) on delete cascade,
-    hash     bytea,
-    inserted boolean not null default false,
-    unique (block_id, hash)
-);
-
-create index sbundle_builder_used_block_hash_idx on sbundle_builder_used (hash);
-
+create index spreconf_block_idx on spreconf (block);
+create index spreconf_signature_idx on spreconf (signature);
+create index spreconf_inserted_at_idx on spreconf (inserted_at);
 
 create table sbundle_hint_history
 (

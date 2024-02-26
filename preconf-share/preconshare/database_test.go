@@ -68,21 +68,21 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 	bundle := SendRequestArgs{
 		Version: "v0.1",
 		Inclusion: RequestInclusion{
-			BlockNumber: 1,
-			MaxBlock:    2,
+			DesiredBlock: 1,
+			MaxBlock:     2,
 		},
-		Body: []RuquestBody{{Tx: (*hexutil.Bytes)(&tx)}},
+		Body: []RequestBody{{Tx: (*hexutil.Bytes)(&tx)}},
 		Privacy: &RequestPrivacy{
 			Hints:      HintHash,
 			Builders:   nil,
 			WantRefund: nil,
 		},
 		Metadata: &RequestMetadata{
-			BundleHash: bundleHash,
-			BodyHashes: []common.Hash{bundleHash},
-			Signer:     signer,
-			OriginID:   "test-origin",
-			ReceivedAt: hexutil.Uint64(receivedAt.UnixMicro()),
+			RequestHash: bundleHash,
+			BodyHashes:  []common.Hash{bundleHash},
+			Signer:      signer,
+			OriginID:    "test-origin",
+			ReceivedAt:  hexutil.Uint64(receivedAt.UnixMicro()),
 		},
 	}
 
@@ -219,10 +219,10 @@ func TestDBBackend_InsertBundleForBuilder(t *testing.T) {
 	bundle := SendRequestArgs{
 		Version: "v0.1",
 		Inclusion: RequestInclusion{
-			BlockNumber: 6,
-			MaxBlock:    8,
+			DesiredBlock: 6,
+			MaxBlock:     8,
 		},
-		Body: []RuquestBody{{Tx: (*hexutil.Bytes)(&tx)}},
+		Body: []RequestBody{{Tx: (*hexutil.Bytes)(&tx)}},
 		Privacy: &RequestPrivacy{
 			Hints:      HintHash,
 			Builders:   nil,

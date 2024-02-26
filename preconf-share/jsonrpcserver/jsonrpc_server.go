@@ -121,16 +121,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	highPriority := r.Header.Get("high_prio") == "true"
 	ctx := context.WithValue(r.Context(), highPriorityKey{}, highPriority)
 
-	signature := r.Header.Get("x-pepc-signature")
+	signature := r.Header.Get("x-preconf-signature")
 	if split := strings.Split(signature, ":"); len(split) > 0 {
 		signer := common.HexToAddress(split[0])
 		ctx = context.WithValue(ctx, signerKey{}, signer)
 	}
 
-	origin := r.Header.Get("x-pepc-origin")
+	origin := r.Header.Get("x-preconf-origin")
 	if origin != "" {
 		if len(origin) > maxOriginIDLength {
-			writeJSONRPCError(w, req.ID, CodeInvalidRequest, "x-pepc-origin header is too long")
+			writeJSONRPCError(w, req.ID, CodeInvalidRequest, "x-preconf-origin header is too long")
 			return
 		}
 		ctx = context.WithValue(ctx, originKey{}, origin)
