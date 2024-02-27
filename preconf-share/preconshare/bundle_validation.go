@@ -113,10 +113,10 @@ func validateBundleInner(level int, bundle *SendRequestArgs, currentBlock uint64
 	matchingHash := common.BytesToHash(matchingHasher.Sum(nil))
 	bundle.Metadata.MatchingHash = matchingHash
 
-	return hash, txs, unmatched, nil
+	return matchingHash, txs, unmatched, nil
 }
 
-func ValidateRequest(bundle *SendRequestArgs, currentBlock uint64, signer types.Signer) (hash common.Hash, unmatched bool, err error) {
-	hash, _, unmatched, err = validateBundleInner(0, bundle, currentBlock, signer)
-	return hash, unmatched, err
+func ValidateRequest(bundle *SendRequestArgs, currentBlock uint64, signer types.Signer) (matchingHash common.Hash, unmatched bool, err error) {
+	matchingHash, _, unmatched, err = validateBundleInner(0, bundle, currentBlock, signer)
+	return matchingHash, unmatched, err
 }

@@ -147,7 +147,9 @@ type RequestMetadata struct {
 }
 
 type SendRequestResponse struct {
-	RequestHash common.Hash `json:"requestHash"`
+	RequestHash common.Hash    `json:"requestHash"`
+	Signature   *hexutil.Bytes `json:"preconfSignature"`
+	Block       hexutil.Uint64 `json:"preconfBlock"`
 }
 
 ////////////////////////////
@@ -158,6 +160,7 @@ type ConfirmRequestArgs struct {
 	Version   string         `json:"version"`
 	Preconf   ConfirmPreconf `json:"preconf"`
 	Signature *hexutil.Bytes `json:"signature"`
+	Endpoint  string         `json:"endpoint"`
 }
 
 type ConfirmPreconf struct {

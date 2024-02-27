@@ -37,6 +37,7 @@ type SimScheduler interface {
 type BundleStorage interface {
 	GetBundleByMatchingHash(ctx context.Context, hash common.Hash) (*SendRequestArgs, error)
 	InsertPreconf(ctx context.Context, preconf *ConfirmRequestArgs) error
+	GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, error)
 }
 
 type EthClient interface {
@@ -108,18 +109,18 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 		return SendRequestResponse{}, ErrInternalServiceError
 	}
 
-	hash, hasUnmatchedHash, err := ValidateRequest(&request, currentBlock, m.signer)
+	matchingHash, hasUnmatchedHash, err := ValidateRequest(&request, currentBlock, m.signer)
 	if err != nil {
 		logger.Warn("failed to validate request", zap.Error(err))
 		return SendRequestResponse{}, err
 	}
-	if oldBundle, ok := m.knownBundleCache.Get(hash); ok {
-		if !newerInclusion(&oldBundle, &request) {
-			logger.Debug("request already known, ignoring", zap.String("hash", hash.Hex()))
-			return SendRequestResponse{hash}, nil
-		}
-	}
-	m.knownBundleCache.Add(hash, request)
+	// if oldBundle, ok := m.knownBundleCache.Get(hash); ok {
+	// 	if !newerInclusion(&oldBundle, &request) {
+	// 		logger.Debug("request already known, ignoring", zap.String("hash", hash.Hex()))
+	// 		return SendRequestResponse{hash}, nil
+	// 	}
+	// }
+	m.knownBundleCache.Add(matchingHash, request)
 
 	signerAddress := jsonrpcserver.GetSigner(ctx)
 	origin := jsonrpcserver.GetOrigin(ctx)
@@ -179,8 +180,24 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 		return SendRequestResponse{}, ErrInternalServiceError
 	}
 
+	// sleep a bit to check if request was preconfirmed
+	time.Sleep(6 * time.Second)
+
+	// get preconf
+	block, signature, err := m.bundleStorage.GetPreconfByMatchingHash(ctx, matchingHash)
+	if err != nil {
+		logger.Error("Failed to get preconfirmations", zap.Error(err))
+		return SendRequestResponse{
+			RequestHash: matchingHash,
+			Signature:   nil,
+			Block:       0,
+		}, nil
+	}
+
 	return SendRequestResponse{
-		RequestHash: hash,
+		RequestHash: matchingHash,
+		Signature:   signature,
+		Block:       hexutil.Uint64(uint64(*block)),
 	}, nil
 }
 

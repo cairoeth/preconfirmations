@@ -92,7 +92,7 @@ type DBSpreconf struct {
 	Hash       []byte    `db:"hash"`
 	Block      int64     `db:"block"`
 	Signature  []byte    `db:"signature"`
-	Final 		bool      `db:"final"`
+	Final      bool      `db:"final"`
 	InsertedAt time.Time `db:"inserted_at"`
 }
 
@@ -110,7 +110,7 @@ LIMIT 1`
 
 var finalPreconfQuery = `UPDATE spreconf SET final = true WHERE hash = $1 RETURNING hash`
 
-var filterPreconfQuery = `DELETE FROM spreconf WHERE hash = $1 AND signature = $2`
+var filterPreconfQuery = `DELETE FROM spreconf WHERE hash = $1 AND signature != $2`
 
 var ErrBundleNotFound = errors.New("bundle not found")
 
@@ -134,7 +134,7 @@ type DBBackend struct {
 	insertPreconf   *sqlx.NamedStmt
 	getPreconf      *sqlx.Stmt
 	filterPreconf   *sqlx.Stmt
-	finalPreconf *sqlx.Stmt
+	finalPreconf    *sqlx.Stmt
 	insertHint      *sqlx.NamedStmt
 	updateBundleSim *sqlx.NamedStmt
 }
@@ -230,7 +230,7 @@ func (b *DBBackend) GetPreconfByMatchingHash(ctx context.Context, hash common.Ha
 
 	// Then, we remove the other preconfs.
 	err = b.filterPreconf.GetContext(ctx, &dbSpreconf, hash.Bytes(), dbSpreconf.Signature)
-	if err != nil && !errors.Is(err, sql.ErrNoRows){
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, nil, err
 	}
 

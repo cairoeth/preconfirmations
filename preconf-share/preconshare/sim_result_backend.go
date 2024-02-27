@@ -8,6 +8,7 @@ import (
 	"github.com/cairoeth/preconfirmations-avs/preconf-share/simqueue"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ybbus/jsonrpc/v3"
 	"go.uber.org/zap"
 )
 
@@ -79,7 +80,7 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 		logger.Debug("Bundle processed, waiting 100ms for preconfs")
 
 		// sleep 100ms to receive preconfirmations
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 
 		logger.Debug("Wait over, checking preconfs received")
 
@@ -91,6 +92,14 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 		}
 
 		logger.Info("Preconfirmation found", zap.String("signature", common.Bytes2Hex(*signature)), zap.Uint64("block", uint64(*block)))
+
+		// Sending signed transactions to the operator
+		rpcClient := jsonrpc.NewClient("http://localhost:8000/receive")
+		_, err = rpcClient.Call(ctx, "receive", bundle.Body)
+		if err != nil {
+			logger.Error("Failed to send signed transactions", zap.Error(err))
+			return
+		}
 	}()
 
 	logger.Debug("Request finalized", zap.String("bundle", hash.Hex()), zap.Duration("duration", time.Since(start)))
