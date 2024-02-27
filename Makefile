@@ -16,6 +16,10 @@ build-share:
 build-operator:
 	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/operator preconf-operator/cmd/operator/main.go
 
+# RPC
+build-rpc:
+	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/rpc rpc/cmd/server/main.go
+
 test:
 	go test ./...
 
