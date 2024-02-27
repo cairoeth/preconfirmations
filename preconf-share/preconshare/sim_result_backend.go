@@ -48,7 +48,7 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 
 	var hash common.Hash
 	if bundle.Metadata != nil {
-		hash = bundle.Metadata.RequestHash
+		hash = bundle.Metadata.MatchingHash
 	}
 	logger := s.log.With(zap.String("bundle", hash.Hex()))
 
@@ -80,16 +80,17 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 
 		// sleep 100ms to receive preconfirmations
 		time.Sleep(5 * time.Second)
-	
+
 		logger.Debug("Wait over, checking preconfs received")
-	
-		// // Fetch preconfirmations from database that match the request hash
-		// block, signature, err := s.store.GetPreconfByMatchingHash(ctx, hash)
-		// if err != nil {
-		// 	logger.Error("Failed to get preconfirmations", zap.Error(err))
-		// }
-	
-		// logger.Info("Preconfirmation found", zap.String("signature", common.Bytes2Hex(*signature)), zap.Uint64("block", uint64(*block)))
+
+		// Fetch preconfirmations from database that match the request hash
+		block, signature, err := s.store.GetPreconfByMatchingHash(ctx, hash)
+		if err != nil {
+			logger.Error("Failed to get preconfirmations", zap.Error(err))
+			return
+		}
+
+		logger.Info("Preconfirmation found", zap.String("signature", common.Bytes2Hex(*signature)), zap.Uint64("block", uint64(*block)))
 	}()
 
 	logger.Debug("Request finalized", zap.String("bundle", hash.Hex()), zap.Duration("duration", time.Since(start)))

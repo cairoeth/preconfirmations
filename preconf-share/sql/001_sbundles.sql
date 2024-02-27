@@ -41,11 +41,13 @@ create table spreconf
     hash              bytea,
     block             bigint                   NOT NULL,
     signature         bytea PRIMARY KEY                   NOT NULL,
+    final            boolean                  NOT NULL DEFAULT false,
     inserted_at       timestamp with time zone NOT NULL DEFAULT now()
 );
 
 create index spreconf_block_idx on spreconf (block);
 create index spreconf_signature_idx on spreconf (signature);
+create index spreconf_final_idx on spreconf (final);
 create index spreconf_inserted_at_idx on spreconf (inserted_at);
 
 create table sbundle_hint_history

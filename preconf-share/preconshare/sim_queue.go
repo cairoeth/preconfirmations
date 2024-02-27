@@ -112,6 +112,7 @@ func (q *SimQueue) ScheduleRequest(ctx context.Context, request *SendRequestArgs
 	if err != nil {
 		return err
 	}
+
 	return q.queue.Push(ctx, data, highPriority, uint64(request.Inclusion.DesiredBlock), uint64(request.Inclusion.MaxBlock))
 }
 
