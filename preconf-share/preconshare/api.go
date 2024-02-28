@@ -37,7 +37,8 @@ type SimScheduler interface {
 type BundleStorage interface {
 	GetBundleByMatchingHash(ctx context.Context, hash common.Hash) (*SendRequestArgs, error)
 	InsertPreconf(ctx context.Context, preconf *ConfirmRequestArgs) error
-	GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, error)
+	GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, *int64, error)
+	UpdatePreconfTimeBySignature(ctx context.Context, time int64, hash common.Hash) error
 }
 
 type EthClient interface {
@@ -184,7 +185,7 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 	time.Sleep(2 * time.Second)
 
 	// get preconf
-	block, signature, err := m.bundleStorage.GetPreconfByMatchingHash(ctx, matchingHash)
+	block, signature, _, err := m.bundleStorage.GetPreconfByMatchingHash(ctx, matchingHash)
 	if err != nil {
 		logger.Error("Failed to get preconfirmations", zap.Error(err))
 		return SendRequestResponse{
@@ -193,6 +194,8 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 			Block:       0,
 		}, nil
 	}
+
+	_ = m.bundleStorage.UpdatePreconfTimeBySignature(ctx, time.Since(startAt).Milliseconds(), matchingHash)
 
 	return SendRequestResponse{
 		RequestHash: matchingHash,
@@ -220,5 +223,30 @@ func (m *API) ConfirmRequest(ctx context.Context, confirmation ConfirmRequestArg
 
 	return ConfirmRequestResponse{
 		Valid: true,
+	}, nil
+}
+
+func (m *API) GetRequest(ctx context.Context, request GetRequestArgs) (_ GetRequestResponse, err error) {
+	logger := m.log
+	startAt := time.Now()
+	defer func() {
+		metrics.RecordRPCCallDuration(GetRequestEndpointName, time.Since(startAt).Milliseconds())
+	}()
+
+	// Get preconfirmation in database.
+	block, signature, time, err := m.bundleStorage.GetPreconfByMatchingHash(ctx, request.Hash)
+	if err != nil {
+		logger.Error("Failed to get preconfirmations", zap.Error(err))
+		return GetRequestResponse{
+			Signature: nil,
+			Block:     0,
+			Time:      0,
+		}, nil
+	}
+
+	return GetRequestResponse{
+		Signature: signature,
+		Block:     hexutil.Uint64(uint64(*block)),
+		Time:      hexutil.Uint64(uint64(*time)),
 	}, nil
 }

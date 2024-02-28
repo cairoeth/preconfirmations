@@ -16,6 +16,7 @@ var (
 const (
 	SendRequestEndpointName    = "preconf_sendRequest"
 	ConfirmRequestEndpointName = "preconf_confirmRequest"
+	GetRequestEndpointName     = "preconf_getRequest"
 )
 
 // HintIntent is a set of hint intents
@@ -170,6 +171,21 @@ type ConfirmPreconf struct {
 
 type ConfirmRequestResponse struct {
 	Valid bool `json:"valid"`
+}
+
+////////////////////////////
+// preconf_getRequest //
+////////////////////////////
+
+type GetRequestArgs struct {
+	Version string      `json:"version"`
+	Hash    common.Hash `json:"hash"`
+}
+
+type GetRequestResponse struct {
+	Signature *hexutil.Bytes `json:"signature"`
+	Block     hexutil.Uint64 `json:"block"`
+	Time      hexutil.Uint64 `json:"time"`
 }
 
 type CleanLog struct {

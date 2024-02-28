@@ -21,7 +21,7 @@ type SimulationResult interface {
 type Storage interface {
 	InsertBundleForStats(ctx context.Context, bundle *SendRequestArgs) (known bool, err error)
 	InsertHistoricalHint(ctx context.Context, currentBlock uint64, hint *Hint) error
-	GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, error)
+	GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, *int64, error)
 }
 
 type SimulationResultBackend struct {
@@ -85,7 +85,7 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 		logger.Debug("Wait over, checking preconfs received")
 
 		// Fetch preconfirmations from database that match the request hash
-		block, signature, err := s.store.GetPreconfByMatchingHash(ctx, hash)
+		block, signature, _, err := s.store.GetPreconfByMatchingHash(ctx, hash)
 		if err != nil {
 			logger.Error("Failed to get preconfirmations", zap.Error(err))
 			return

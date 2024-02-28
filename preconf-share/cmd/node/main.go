@@ -147,6 +147,7 @@ func main() {
 	jsonRPCServer, err := jsonrpcserver.NewHandler(jsonrpcserver.Methods{
 		preconshare.SendRequestEndpointName:    api.SendRequest,
 		preconshare.ConfirmRequestEndpointName: api.ConfirmRequest,
+		preconshare.GetRequestEndpointName:     api.GetRequest,
 	})
 	if err != nil {
 		logger.Fatal("Failed to create jsonrpc server", zap.Error(err))

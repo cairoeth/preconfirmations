@@ -92,7 +92,7 @@ type DBSpreconf struct {
 	Hash       []byte    `db:"hash"`
 	Block      int64     `db:"block"`
 	Signature  []byte    `db:"signature"`
-	Final      bool      `db:"final"`
+	Time       int64     `db:"time"`
 	InsertedAt time.Time `db:"inserted_at"`
 }
 
@@ -102,13 +102,13 @@ VALUES (:hash, :block, :signature)
 ON CONFLICT (signature) DO NOTHING`
 
 var getPreconfQuery = `
-SELECT block, signature
+SELECT block, signature, time
 FROM spreconf
 WHERE hash = $1
 ORDER BY block
 LIMIT 1`
 
-var finalPreconfQuery = `UPDATE spreconf SET final = true WHERE hash = $1 RETURNING hash`
+var updatePreconfQuery = `UPDATE spreconf SET time = $1 WHERE hash = $2`
 
 var filterPreconfQuery = `DELETE FROM spreconf WHERE hash = $1 AND signature != $2`
 
@@ -134,7 +134,7 @@ type DBBackend struct {
 	insertPreconf   *sqlx.NamedStmt
 	getPreconf      *sqlx.Stmt
 	filterPreconf   *sqlx.Stmt
-	finalPreconf    *sqlx.Stmt
+	updatePreconf   *sqlx.Stmt
 	insertHint      *sqlx.NamedStmt
 	updateBundleSim *sqlx.NamedStmt
 }
@@ -167,7 +167,7 @@ func NewDBBackend(postgresDSN string) (*DBBackend, error) {
 	if err != nil {
 		return nil, err
 	}
-	finalPreconf, err := db.Preparex(finalPreconfQuery)
+	updatePreconf, err := db.Preparex(updatePreconfQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func NewDBBackend(postgresDSN string) (*DBBackend, error) {
 		insertPreconf:   insertPreconf,
 		getPreconf:      getPreconf,
 		filterPreconf:   filterPreconf,
-		finalPreconf:    finalPreconf,
+		updatePreconf:   updatePreconf,
 		insertHint:      insertHint,
 		updateBundleSim: updateBundleSim,
 	}, nil
@@ -211,36 +211,42 @@ func (b *DBBackend) GetBundleByMatchingHash(ctx context.Context, hash common.Has
 	return &bundle, nil
 }
 
-func (b *DBBackend) GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, error) {
+func (b *DBBackend) GetPreconfByMatchingHash(ctx context.Context, hash common.Hash) (*int64, *hexutil.Bytes, *int64, error) {
 	var dbSpreconf DBSpreconf
 
 	// First, we select the best preconf.
 	err := b.getPreconf.GetContext(ctx, &dbSpreconf, hash.Bytes())
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil, ErrBundleNotFound
+		return nil, nil, nil, ErrBundleNotFound
 	} else if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	var signature hexutil.Bytes
 	err = json.Unmarshal(dbSpreconf.Signature, &signature)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	// Then, we remove the other preconfs.
 	err = b.filterPreconf.GetContext(ctx, &dbSpreconf, hash.Bytes(), dbSpreconf.Signature)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	// // Mark preconf as final
-	// err = b.finalPreconf.GetContext(ctx, &dbSpreconf, hash.Bytes())
-	// if err != nil {
-	// 	return nil, nil, err
-	// }
+	return &dbSpreconf.Block, &signature, &dbSpreconf.Time, nil
+}
 
-	return &dbSpreconf.Block, &signature, nil
+func (b *DBBackend) UpdatePreconfTimeBySignature(ctx context.Context, time int64, hash common.Hash) error {
+	var dbSpreconf DBSpreconf
+
+	// First, we select the best preconf.
+	err := b.updatePreconf.GetContext(ctx, &dbSpreconf, time, hash.Bytes())
+	if err != nil {
+		return err
+	}
+
+	return err
 }
 
 // InsertBundleForStats inserts a bundle into the database.
@@ -373,7 +379,7 @@ func (b *DBBackend) InsertPreconf(ctx context.Context, preconf *ConfirmRequestAr
 		return err
 	}
 	dbPreconf.Signature = byteSignature
-	dbPreconf.Final = false
+	dbPreconf.Time = 0
 
 	_, err = b.insertPreconf.ExecContext(ctx, dbPreconf)
 	if err != nil {
