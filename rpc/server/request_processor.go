@@ -289,18 +289,10 @@ func (r *RpcRequest) sendTxToRelay() {
 		r.logger.Fatal("Failed to connect to get block number", zap.Error(err))
 	}
 
-	r.logger.Info("debugging raw tx hex", zap.String("tx", r.rawTxHex))
-
-	// txBytes := common.Hex2Bytes(r.rawTxHex)
-
 	// Sending transactions to preconf-share node
 	rpcClient := jsonrpc.NewClient(r.relayUrl)
 
 	txBytes := common.FromHex(r.rawTxHex)
-
-	// r.logger.Info("[sendTxToRelay] sending to preconf-share", zap.String("relay", r.relayUrl), zap.String("tx", string(txBytes)))
-
-	// var result preconshare.SendRequestResponse
 
 	request := preconshare.SendRequestArgs{
 		Version: "v0.1",
@@ -308,16 +300,16 @@ func (r *RpcRequest) sendTxToRelay() {
 			DesiredBlock: hexutil.Uint64(blockNumber),
 			MaxBlock:     hexutil.Uint64(blockNumber + 5),
 		},
-		Body: []preconshare.RequestBody{
-			{Tx: *hexutil.Bytes(txBytes)}
-		},
+		Body: []preconshare.RequestBody{{Tx: (*hexutil.Bytes)(&txBytes)}},
 		Privacy: &preconshare.RequestPrivacy{
 			Hints:     preconshare.HintHash,
 			Operators: nil,
 		},
 	}
 
-	_, err = rpcClient.Call(context.Background(), "preconf_sendRequest", []*preconshare.SendRequestArgs{&request})
+	var result preconshare.SendRequestResponse
+
+	err = rpcClient.CallFor(context.Background(), &result, "preconf_sendRequest", []*preconshare.SendRequestArgs{&request})
 	if err != nil {
 		r.logger.Error("[sendTxToRelay] Relay call failed", zap.Error(err))
 		r.writeRpcError(err.Error(), types.JsonRpcInternalError)
@@ -325,7 +317,7 @@ func (r *RpcRequest) sendTxToRelay() {
 	}
 
 	r.writeRpcResult(txHash)
-	r.logger.Info("[sendTxToRelay] Sent and received preconfirmation", zap.String("tx", txHash), zap.Uint64("block", uint64(blockNumber)))
+	r.logger.Info("[sendTxToRelay] Sent and received preconfirmation", zap.String("tx", txHash), zap.Uint64("block", uint64(result.Block)))
 }
 
 // Sends cancel-tx to relay as cancelPrivateTransaction, if initial tx was sent there too.
