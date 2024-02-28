@@ -25,7 +25,7 @@ var (
 	defaultDrainSeconds             = 60
 	defaultProxyUrl                 = "http://127.0.0.1:8545"
 	defaultProxyTimeoutSeconds      = 10
-	defaultRelayUrl                 = "https://relay.flashbots.net"
+	defaultRelayUrl                 = "http://localhost:8080"
 	defaultRedisUrl                 = "localhost:6379"
 	defaultServiceName              = os.Getenv("SERVICE_NAME")
 	defaultFetchInfoIntervalSeconds = 600
@@ -40,7 +40,7 @@ var (
 	proxyUrl             = flag.String("proxy", getEnvAsStrOrDefault("PROXY_URL", defaultProxyUrl), "URL for default JSON-RPC proxy target (eth node, Infura, etc.)")
 	proxyTimeoutSeconds  = flag.Int("proxyTimeoutSeconds", getEnvAsIntOrDefault("PROXY_TIMEOUT_SECONDS", defaultProxyTimeoutSeconds), "proxy client timeout in seconds")
 	redisUrl             = flag.String("redis", getEnvAsStrOrDefault("REDIS_URL", defaultRedisUrl), "URL for Redis (use 'dev' to use integrated in-memory redis)")
-	relayUrl             = flag.String("relayUrl", getEnvAsStrOrDefault("RELAY_URL", defaultRelayUrl), "URL for relay")
+	relayUrl             = flag.String("relayUrl", getEnvAsStrOrDefault("RELAY_URL", defaultRelayUrl), "URL for preconf rpc")
 	relaySigningKey      = flag.String("signingKey", os.Getenv("RELAY_SIGNING_KEY"), "Signing key for relay requests")
 	psqlDsn              = flag.String("psql", os.Getenv("POSTGRES_DSN"), "Postgres DSN")
 	debugPtr             = flag.Bool("debug", defaultDebug, "print debug output")

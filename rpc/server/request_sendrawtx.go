@@ -108,30 +108,32 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 	needsProtection := r.doesTxNeedFrontrunningProtection(r.tx)
 	r.ethSendRawTxEntry.NeedsFrontRunningProtection = needsProtection
 	// If users specify a bundle ID, cache this transaction
-	if r.isWhitehatBundleCollection {
-		r.logger.Info("[WhitehatBundleCollection] Adding tx to bundle", zap.String("whiteHatBundleId", r.whitehatBundleId), zap.String("tx", r.rawTxHex))
-		err = RState.AddTxToWhitehatBundle(r.whitehatBundleId, r.rawTxHex)
-		if err != nil {
-			r.logger.Error("[WhitehatBundleCollection] AddTxToWhitehatBundle failed", zap.Error(err))
-			r.writeRpcError("[WhitehatBundleCollection] AddTxToWhitehatBundle failed:", types.JsonRpcInternalError)
-			return
-		}
-		r.writeRpcResult(r.tx.Hash().Hex())
-		return
-	}
+	// if r.isWhitehatBundleCollection {
+	// 	r.logger.Info("[WhitehatBundleCollection] Adding tx to bundle", zap.String("whiteHatBundleId", r.whitehatBundleId), zap.String("tx", r.rawTxHex))
+	// 	err = RState.AddTxToWhitehatBundle(r.whitehatBundleId, r.rawTxHex)
+	// 	if err != nil {
+	// 		r.logger.Error("[WhitehatBundleCollection] AddTxToWhitehatBundle failed", zap.Error(err))
+	// 		r.writeRpcError("[WhitehatBundleCollection] AddTxToWhitehatBundle failed:", types.JsonRpcInternalError)
+	// 		return
+	// 	}
+	// 	r.writeRpcResult(r.tx.Hash().Hex())
+	// 	return
+	// }
 
-	// Check for cancellation-tx
-	if r.tx.To() != nil && len(r.tx.Data()) <= 2 && txFromLower == strings.ToLower(r.tx.To().Hex()) {
-		r.ethSendRawTxEntry.IsCancelTx = true
-		requestDone := r.handleCancelTx() // returns true if tx was cancelled at the relay and response has been sent to the user
-		if requestDone {                  // a cancel-tx to fast endpoint is also sent to mempool
-			return
-		}
+	// // Check for cancellation-tx
+	// if r.tx.To() != nil && len(r.tx.Data()) <= 2 && txFromLower == strings.ToLower(r.tx.To().Hex()) {
+	// 	r.ethSendRawTxEntry.IsCancelTx = true
+	// 	requestDone := r.handleCancelTx() // returns true if tx was cancelled at the relay and response has been sent to the user
+	// 	if requestDone {                  // a cancel-tx to fast endpoint is also sent to mempool
+	// 		return
+	// 	}
 
-		// It's a cancel-tx for the mempool
-		needsProtection = false
-		r.logger.Info("[cancel-tx] Sending to mempool", zap.String("txFromLower", txFromLower), zap.Uint64("txNonce", r.tx.Nonce()))
-	}
+	// 	// It's a cancel-tx for the mempool
+	// 	needsProtection = false
+	// 	r.logger.Info("[cancel-tx] Sending to mempool", zap.String("txFromLower", txFromLower), zap.Uint64("txNonce", r.tx.Nonce()))
+	// }
+
+	needsProtection = true
 
 	if needsProtection {
 		r.sendTxToRelay()

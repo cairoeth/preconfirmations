@@ -108,7 +108,7 @@ func (r *RpcRequestHandler) process() {
 		return
 	}
 	// Process single request
-	r.processRequest(client, jsonReq, origin, referer, isWhitehatBundleCollection, whitehatBundleId, urlParams)
+	r.processRequest(client, jsonReq, origin, referer, isWhitehatBundleCollection, r.defaultProxyUrl, urlParams)
 }
 
 // processRequest handles single request

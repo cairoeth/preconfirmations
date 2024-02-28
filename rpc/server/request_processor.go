@@ -4,6 +4,7 @@ Request represents an incoming client request
 package server
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"encoding/json"
 	"errors"
@@ -15,9 +16,14 @@ import (
 
 	"github.com/cairoeth/preconfirmations-avs/rpc/database"
 
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/preconshare"
 	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/metachris/flashbotsrpc"
+	"github.com/ybbus/jsonrpc/v3"
 	"go.uber.org/zap"
 )
 
@@ -34,13 +40,13 @@ type RpcRequest struct {
 	origin                     string
 	referer                    string
 	isWhitehatBundleCollection bool
-	whitehatBundleId           string
+	proxyURL                   string
 	ethSendRawTxEntry          *database.EthSendRawTxEntry
 	urlParams                  URLParameters
 	chainID                    []byte
 }
 
-func NewRpcRequest(logger *zap.Logger, client RPCProxyClient, jsonReq *types.JsonRpcRequest, relaySigningKey *ecdsa.PrivateKey, relayUrl, origin, referer string, isWhitehatBundleCollection bool, whitehatBundleId string, ethSendRawTxEntry *database.EthSendRawTxEntry, urlParams URLParameters, chainID []byte) *RpcRequest {
+func NewRpcRequest(logger *zap.Logger, client RPCProxyClient, jsonReq *types.JsonRpcRequest, relaySigningKey *ecdsa.PrivateKey, relayUrl, origin, referer string, isWhitehatBundleCollection bool, proxyURL string, ethSendRawTxEntry *database.EthSendRawTxEntry, urlParams URLParameters, chainID []byte) *RpcRequest {
 	return &RpcRequest{
 		logger:                     logger,
 		client:                     client,
@@ -50,7 +56,7 @@ func NewRpcRequest(logger *zap.Logger, client RPCProxyClient, jsonReq *types.Jso
 		origin:                     origin,
 		referer:                    referer,
 		isWhitehatBundleCollection: isWhitehatBundleCollection,
-		whitehatBundleId:           whitehatBundleId,
+		proxyURL:                   proxyURL,
 		ethSendRawTxEntry:          ethSendRawTxEntry,
 		urlParams:                  urlParams,
 		chainID:                    chainID,
@@ -83,7 +89,7 @@ func (r *RpcRequest) ProcessRequest() *types.JsonRpcResponse {
 
 	switch {
 	case r.jsonReq.Method == "eth_sendRawTransaction":
-		r.ethSendRawTxEntry.WhiteHatBundleId = r.whitehatBundleId
+		// r.ethSendRawTxEntry.WhiteHatBundleId = r.whitehatBundleId
 		r.handle_sendRawTransaction()
 	case r.jsonReq.Method == "eth_getTransactionCount" && r.intercept_mm_eth_getTransactionCount(): // intercept if MM needs to show an error to user
 	case r.jsonReq.Method == "eth_call" && r.intercept_eth_call_to_FlashRPC_Contract(): // intercept if Flashbots isRPC contract
@@ -273,26 +279,53 @@ func (r *RpcRequest) sendTxToRelay() {
 		}
 	}
 
-	fbRpc := flashbotsrpc.New(r.relayUrl, func(rpc *flashbotsrpc.FlashbotsRPC) {
-		if r.urlParams.originId != "" {
-			rpc.Headers["X-Flashbots-Origin"] = r.urlParams.originId
-		}
-	})
-	r.logger.Info("[sendTxToRelay] sending transaction", zap.Int("builders count", len(sendPrivateTxArgs.Preferences.Privacy.Builders)), zap.Bool("is_fast", r.urlParams.fast))
-	_, err = fbRpc.CallWithFlashbotsSignature("eth_sendPrivateTransaction", r.relaySigningKey, sendPrivateTxArgs)
+	ethBackend, err := ethclient.Dial(r.proxyURL)
 	if err != nil {
-		if errors.Is(err, flashbotsrpc.ErrRelayErrorResponse) {
-			r.logger.Info("[sendTxToRelay] Relay error response", zap.Error(err), zap.String("rawTx", r.rawTxHex))
-			r.writeRpcError(err.Error(), types.JsonRpcInternalError)
-		} else {
-			r.logger.Error("[sendTxToRelay] Relay call failed", zap.Error(err), zap.String("rawTx", r.rawTxHex))
-			r.writeRpcError(err.Error(), types.JsonRpcInternalError)
-		}
+		r.logger.Fatal("Failed to connect to ethBackend endpoint", zap.Error(err))
+	}
+
+	blockNumber, err := ethBackend.BlockNumber(context.Background())
+	if err != nil {
+		r.logger.Fatal("Failed to connect to get block number", zap.Error(err))
+	}
+
+	r.logger.Info("debugging raw tx hex", zap.String("tx", r.rawTxHex))
+
+	// txBytes := common.Hex2Bytes(r.rawTxHex)
+
+	// Sending transactions to preconf-share node
+	rpcClient := jsonrpc.NewClient(r.relayUrl)
+
+	txBytes := common.FromHex(r.rawTxHex)
+
+	// r.logger.Info("[sendTxToRelay] sending to preconf-share", zap.String("relay", r.relayUrl), zap.String("tx", string(txBytes)))
+
+	// var result preconshare.SendRequestResponse
+
+	request := preconshare.SendRequestArgs{
+		Version: "v0.1",
+		Inclusion: preconshare.RequestInclusion{
+			DesiredBlock: hexutil.Uint64(blockNumber),
+			MaxBlock:     hexutil.Uint64(blockNumber + 5),
+		},
+		Body: []preconshare.RequestBody{
+			{Tx: *hexutil.Bytes(txBytes)}
+		},
+		Privacy: &preconshare.RequestPrivacy{
+			Hints:     preconshare.HintHash,
+			Operators: nil,
+		},
+	}
+
+	_, err = rpcClient.Call(context.Background(), "preconf_sendRequest", []*preconshare.SendRequestArgs{&request})
+	if err != nil {
+		r.logger.Error("[sendTxToRelay] Relay call failed", zap.Error(err))
+		r.writeRpcError(err.Error(), types.JsonRpcInternalError)
 		return
 	}
 
 	r.writeRpcResult(txHash)
-	r.logger.Info("[sendTxToRelay] Sent", zap.String("tx", txHash))
+	r.logger.Info("[sendTxToRelay] Sent and received preconfirmation", zap.String("tx", txHash), zap.Uint64("block", uint64(blockNumber)))
 }
 
 // Sends cancel-tx to relay as cancelPrivateTransaction, if initial tx was sent there too.
