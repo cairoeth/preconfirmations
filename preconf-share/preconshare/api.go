@@ -115,12 +115,6 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 		logger.Warn("failed to validate request", zap.Error(err))
 		return SendRequestResponse{}, err
 	}
-	// if oldBundle, ok := m.knownBundleCache.Get(hash); ok {
-	// 	if !newerInclusion(&oldBundle, &request) {
-	// 		logger.Debug("request already known, ignoring", zap.String("hash", hash.Hex()))
-	// 		return SendRequestResponse{hash}, nil
-	// 	}
-	// }
 	m.knownBundleCache.Add(matchingHash, request)
 
 	signerAddress := jsonrpcserver.GetSigner(ctx)
@@ -135,43 +129,6 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 
 	metrics.RecordBundleValidationDuration(time.Since(validateBundleTime).Milliseconds())
 
-	// if hasUnmatchedHash {
-	// 	var unmatchedHash common.Hash
-	// 	if len(bundle.Body) > 0 && bundle.Body[0].Hash != nil {
-	// 		unmatchedHash = *bundle.Body[0].Hash
-	// 	} else {
-	// 		return SendRequestResponse{}, ErrInternalServiceError
-	// 	}
-	// 	fetchUnmatchedTime := time.Now()
-	// 	unmatchedBundle, err := m.spikeManager.GetResult(ctx, unmatchedHash.String())
-	// 	metrics.RecordBundleFetchUnmatchedDuration(time.Since(fetchUnmatchedTime).Milliseconds())
-	// 	if err != nil {
-	// 		logger.Error("Failed to fetch unmatched bundle", zap.Error(err), zap.String("matching_hash", unmatchedHash.Hex()))
-	// 		metrics.IncRPCCallFailure(SendRequestEndpointName)
-	// 		return SendRequestResponse{}, ErrBackrunNotFound
-	// 	}
-	// 	if privacy := unmatchedBundle.Privacy; privacy == nil && privacy.Hints.HasHint(HintHash) {
-	// 		// if the unmatched bundle have not configured privacy or has not set the hash hint
-	// 		// then we cannot backrun it
-	// 		return SendRequestResponse{}, ErrBackrunInvalidBundle
-	// 	}
-	// 	bundle.Body[0].Bundle = unmatchedBundle
-	// 	bundle.Body[0].Hash = nil
-	// 	// replace matching hash with actual bundle hash
-	// 	findAndReplace(bundle.Metadata.BodyHashes, unmatchedHash, unmatchedBundle.Metadata.BundleHash)
-	// 	// send 90 % of the refund to the unmatched bundle or the suggested refund if set
-	// 	refundPercent := RefundPercent
-	// 	if unmatchedBundle.Privacy != nil && unmatchedBundle.Privacy.WantRefund != nil {
-	// 		refundPercent = *unmatchedBundle.Privacy.WantRefund
-	// 	}
-	// 	bundle.Validity.Refund = []RefundConstraint{{0, refundPercent}}
-	// 	MergePrivacyBuilders(&bundle)
-	// 	err = MergeInclusionIntervals(&bundle.Inclusion, &unmatchedBundle.Inclusion)
-	// 	if err != nil {
-	// 		return SendRequestResponse{}, ErrBackrunInclusion
-	// 	}
-	// }
-
 	metrics.IncSbundlesReceivedValid()
 	highPriority := jsonrpcserver.GetPriority(ctx)
 	err = m.scheduler.ScheduleRequest(ctx, &request, highPriority)
@@ -182,7 +139,7 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 	}
 
 	// sleep a bit to check if request was preconfirmed
-	time.Sleep(2 * time.Second)
+	time.Sleep(500 * time.Millisecond)
 
 	// get preconf
 	block, signature, _, err := m.bundleStorage.GetPreconfByMatchingHash(ctx, matchingHash)

@@ -77,10 +77,10 @@ func (s *SimulationResultBackend) SimulatedBundle(ctx context.Context,
 			}
 		}
 
-		logger.Debug("Bundle processed, waiting 100ms for preconfs")
+		logger.Debug("Bundle processed, waiting 500ms for preconfs")
 
-		// sleep 100ms to receive preconfirmations
-		time.Sleep(1 * time.Second)
+		// sleep 500ms to receive preconfirmations
+		time.Sleep(500 * time.Millisecond)
 
 		logger.Debug("Wait over, checking preconfs received")
 

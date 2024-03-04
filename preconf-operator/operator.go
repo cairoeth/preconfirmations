@@ -28,6 +28,8 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/nodeapi"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+    "github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -274,6 +276,36 @@ func (o *Operator) Start(ctx context.Context) error {
 			}
 
 			o.logger.Infof(event.Data.Hash.Hex())
+
+			ecdsaKeyPassword, _ := os.LookupEnv("OPERATOR_ECDSA_KEY_PASSWORD")
+
+			privateKey, err := sdkecdsa.ReadKey(
+				o.config.EcdsaPrivateKeyStorePath,
+				ecdsaKeyPassword,
+			)
+			if err != nil {
+				o.logger.Error("Error getting the private key", "err", err)
+				sub.Stop()
+			}
+
+			// TOOD: update this
+			dataToSign := "{request: wwdwdw}"
+
+			// keccak256 hash of the data
+			dataBytes := []byte(dataToSign)
+			hashData := crypto.Keccak256Hash(dataBytes)
+
+			signatureBytes, err := crypto.Sign(hashData.Bytes(), privateKey)
+			if err != nil {
+				o.logger.Error("Error occured signing preconfirmation", "err", err)
+				sub.Stop()
+			}
+		
+			signature := hexutil.Encode(signatureBytes)
+
+			o.logger.Infof(signature)
+
+			
 		}
 	}
 }
