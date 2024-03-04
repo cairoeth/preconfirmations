@@ -165,8 +165,8 @@ type ConfirmRequestArgs struct {
 }
 
 type ConfirmPreconf struct {
-	Request Hint           `json:"request"`
-	Block   hexutil.Uint64 `json:"block"`
+	Hash  common.Hash    `json:"hash"`
+	Block hexutil.Uint64 `json:"block"`
 }
 
 type ConfirmRequestResponse struct {

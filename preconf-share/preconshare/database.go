@@ -372,7 +372,7 @@ func dbIntToEth(i *hexutil.Big) string {
 func (b *DBBackend) InsertPreconf(ctx context.Context, preconf *ConfirmRequestArgs) error {
 	var dbPreconf DBSpreconf
 
-	dbPreconf.Hash = preconf.Preconf.Request.Hash.Bytes()
+	dbPreconf.Hash = preconf.Preconf.Hash.Bytes()
 	dbPreconf.Block = int64(uint64(preconf.Preconf.Block))
 	byteSignature, err := json.Marshal(preconf.Signature)
 	if err != nil {

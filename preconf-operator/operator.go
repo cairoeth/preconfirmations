@@ -28,8 +28,10 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/nodeapi"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
+	"github.com/cairoeth/preconfirmations-avs/preconf-share/preconshare"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-    "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ybbus/jsonrpc/v3"
 )
 
 const (
@@ -300,12 +302,24 @@ func (o *Operator) Start(ctx context.Context) error {
 				o.logger.Error("Error occured signing preconfirmation", "err", err)
 				sub.Stop()
 			}
-		
-			signature := hexutil.Encode(signatureBytes)
 
-			o.logger.Infof(signature)
+			response := preconshare.ConfirmRequestArgs{
+				Version: "v0.1",
+				Preconf: preconshare.ConfirmPreconf{
+					Hash:  event.Data.Hash,
+					Block: 510,
+				},
+				Signature: (*hexutil.Bytes)(&signatureBytes),
+				Endpoint:  "http://localhost:8000/receive",
+			}
 
-			
+			// Send signed preconfirmation to preconf-share
+			rpcClient := jsonrpc.NewClient("http://localhost:8080")
+			_, err = rpcClient.Call(ctx, "preconf_confirmRequest", []*preconshare.ConfirmRequestArgs{&response})
+			if err != nil {
+				o.logger.Error("Failed to send signed preconfirmation", "err", err)
+				sub.Stop()
+			}
 		}
 	}
 }
