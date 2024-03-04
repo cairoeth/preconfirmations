@@ -323,3 +323,7 @@ func (o *Operator) Start(ctx context.Context) error {
 		}
 	}
 }
+
+func (o *Operator) Receive(ctx context.Context, request []preconshare.RequestBody) (_ bool, err error) {
+	return true, nil
+}
