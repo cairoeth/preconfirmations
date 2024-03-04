@@ -277,8 +277,6 @@ func (o *Operator) Start(ctx context.Context) error {
 				sub.Stop()
 			}
 
-			o.logger.Infof(event.Data.Hash.Hex())
-
 			ecdsaKeyPassword, _ := os.LookupEnv("OPERATOR_ECDSA_KEY_PASSWORD")
 
 			privateKey, err := sdkecdsa.ReadKey(
@@ -312,6 +310,8 @@ func (o *Operator) Start(ctx context.Context) error {
 				Signature: (*hexutil.Bytes)(&signatureBytes),
 				Endpoint:  "http://localhost:8000/receive",
 			}
+
+			o.logger.Infof("Sending preconfirmation for hash", event.Data.Hash.Hex())
 
 			// Send signed preconfirmation to preconf-share
 			rpcClient := jsonrpc.NewClient("http://localhost:8080")
