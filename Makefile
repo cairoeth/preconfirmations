@@ -1,24 +1,41 @@
 VERSION := $(shell git describe --tags --always --dirty="-dev")
 
-all: clean build-share build-operator build-rpc
-
 v:
 	@echo "Version: ${VERSION}"
 
 clean:
 	rm -rf build/
 
-# Preconf-Share
+# Build preconf-share
 build-share:
 	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/node preconf-share/cmd/node/main.go
 
-# Preconf-Operator
+# Build preconf-operator
 build-operator:
 	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/operator preconf-operator/cmd/operator/main.go
 
-# RPC
+# Build rpc
 build-rpc:
 	go build -trimpath -ldflags "-X main.version=${VERSION}" -v -o build/rpc rpc/cmd/server/main.go
+
+# Build all components
+build-all: clean build-share build-operator build-rpc
+
+# Run preconf-share
+run-share:
+	make build-share
+	cd preconf-share && docker compose up -d --wait && sleep 1
+	for file in preconf-share/sql/*.sql; do psql "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -f $$file; done
+	./build/node
+
+# Run preconf-operator
+run-operator:
+	make build-operator
+	./build/operator --config preconf-operator/config.yaml
+
+# Run anvil with prepared state
+run-anvil:
+	anvil --load-state contracts/anvil-state.json
 
 test:
 	go test ./...
