@@ -167,7 +167,7 @@ func (m *API) ConfirmRequest(ctx context.Context, confirmation ConfirmRequestArg
 	defer func() {
 		metrics.RecordRPCCallDuration(ConfirmRequestEndpointName, time.Since(startAt).Milliseconds())
 	}()
-	
+
 	logger.Info("Received request connfirmation")
 
 	// TODO: validate confirmation (check signature, that is targetted for the current request, etc.)

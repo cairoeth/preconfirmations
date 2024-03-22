@@ -11,9 +11,9 @@ import (
 
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/chainio"
+	"github.com/cairoeth/preconfirmations-avs/preconf-operator/receiverapi"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/sse"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/types"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/receiverapi"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
@@ -89,9 +89,6 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	// Setup Node Api
 	nodeApi := nodeapi.NewNodeApi(AVS_NAME, SEM_VER, c.NodeApiIpPortAddress, logger)
 
-	// Setup Receive Api
-	receiveApi := receiverapi.NewReceiveApi("localhost:8000", logger)
-
 	var ethRpcClient eth.EthClient
 	if c.EnableMetrics {
 		rpcCallsCollector := rpccalls.NewCollector(AVS_NAME, reg)
@@ -107,6 +104,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 			return nil, err
 		}
 	}
+
+	// Setup Receive Api
+	receiveApi := receiverapi.NewReceiveApi("localhost:8000", logger, ethRpcClient)
 
 	blsKeyPassword, ok := os.LookupEnv("OPERATOR_BLS_KEY_PASSWORD")
 	if !ok {

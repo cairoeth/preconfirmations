@@ -8,25 +8,39 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
-
+	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	"github.com/Layr-Labs/eigensdk-go/logging"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
 type ReceiveApi struct {
-	ipPortAddr    string
-	logger        logging.Logger
+	ipPortAddr string
+	logger     logging.Logger
+	client     eth.EthClient
 }
 
 type ReceiveResponse struct {
-	jsonrpc   string `json:"jsonrpc"`
-    id    	  int    `json:"id"`
+	jsonrpc string `json:"jsonrpc"`
+	id      int    `json:"id"`
 }
 
-func NewReceiveApi(IpPortAddr string, logger logging.Logger) *ReceiveApi {
+type ReceiveTx struct {
+	Tx *hexutil.Bytes `json:"tx,omitempty"`
+}
+
+type JsonRpcRequest struct {
+	Id      interface{} `json:"id"`
+	Method  string      `json:"method"`
+	Params  []ReceiveTx `json:"params"`
+	Version string      `json:"jsonrpc,omitempty"`
+}
+
+func NewReceiveApi(IpPortAddr string, logger logging.Logger, client eth.EthClient) *ReceiveApi {
 	receiveApi := &ReceiveApi{
-		ipPortAddr:    IpPortAddr,
-		logger:        logger,
+		ipPortAddr: IpPortAddr,
+		logger:     logger,
+		client:     client,
 	}
 	return receiveApi
 }
@@ -48,15 +62,27 @@ func (api *ReceiveApi) Start() <-chan error {
 
 func (api *ReceiveApi) receive(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-    var txs types.JsonRpcRequest
-    err := decoder.Decode(&txs)
-    if err != nil {
-        api.logger.Error("could not read request body", "err", err)
-    }
-    api.logger.Info("processed receive", "txs", txs)
+	var txs JsonRpcRequest
+	err := decoder.Decode(&txs)
+	if err != nil {
+		api.logger.Error("could not read request body", "err", err)
+	}
+	api.logger.Info("processed receive", "txs", txs)
 
-	
+	for _, tx := range txs.Params {
+		api.logger.Info("tx received", "tx", tx.Tx)
 
+		var txBytes types.Transaction
+		err := txBytes.UnmarshalBinary(*tx.Tx)
+		if err != nil {
+			api.logger.Error("could not decode tx into bytes", "err", err)
+		}
+
+		err = api.client.SendTransaction(context.Background(), &txBytes)
+		if err != nil {
+			api.logger.Error("could not send tx to rpc", "err", err)
+		}
+	}
 
 	response := &ReceiveResponse{"2.0", 1}
 	err = jsonResponse(w, response)
