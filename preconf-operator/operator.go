@@ -13,6 +13,7 @@ import (
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/chainio"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/sse"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/types"
+	"github.com/cairoeth/preconfirmations-avs/preconf-operator/receiverapi"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
@@ -51,6 +52,7 @@ type Operator struct {
 	metricsReg       *prometheus.Registry
 	metrics          metrics.Metrics
 	nodeApi          *nodeapi.NodeApi
+	receiveApi       *receiverapi.ReceiveApi
 	avsWriter        *chainio.AvsWriter
 	avsReader        chainio.AvsReaderer
 	eigenlayerReader sdkelcontracts.ELReader
@@ -86,6 +88,9 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 
 	// Setup Node Api
 	nodeApi := nodeapi.NewNodeApi(AVS_NAME, SEM_VER, c.NodeApiIpPortAddress, logger)
+
+	// Setup Receive Api
+	receiveApi := receiverapi.NewReceiveApi("localhost:8000", logger)
 
 	var ethRpcClient eth.EthClient
 	if c.EnableMetrics {
@@ -189,6 +194,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		metricsReg:                         reg,
 		metrics:                            avsAndEigenMetrics,
 		nodeApi:                            nodeApi,
+		receiveApi:                         receiveApi,
 		ethClient:                          ethRpcClient,
 		avsWriter:                          avsWriter,
 		avsReader:                          avsReader,
@@ -248,6 +254,9 @@ func (o *Operator) Start(ctx context.Context) error {
 	if o.config.EnableNodeApi {
 		o.nodeApi.Start()
 	}
+
+	o.receiveApi.Start()
+
 	var metricsErrChan <-chan error
 	if o.config.EnableMetrics {
 		metricsErrChan = o.metrics.Start(ctx, o.metricsReg)
@@ -322,8 +331,4 @@ func (o *Operator) Start(ctx context.Context) error {
 			}
 		}
 	}
-}
-
-func (o *Operator) Receive(ctx context.Context, request []preconshare.RequestBody) (_ bool, err error) {
-	return true, nil
 }

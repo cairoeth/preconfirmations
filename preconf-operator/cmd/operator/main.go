@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
+	// "errors"
+	// "fmt"
 	"log"
-	"net/http"
+	// "net/http"
 	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	// "os/signal"
+	// "syscall"
+	// "time"
 
 	"github.com/urfave/cli"
 
@@ -18,7 +18,7 @@ import (
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/config"
 	"github.com/cairoeth/preconfirmations-avs/preconf-operator/types"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-share/jsonrpcserver"
+	// "github.com/cairoeth/preconfirmations-avs/preconf-share/jsonrpcserver"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )
@@ -62,43 +62,43 @@ func operatorMain(ctx_cli *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	log.Println("Started operator")
+	// log.Println("Started operator")
 
-	jsonRPCServer, err := jsonrpcserver.NewHandler(jsonrpcserver.Methods{
-		"receive": operator.Receive,
-	})
-	if err != nil {
-		log.Fatal("Failed to create jsonrpc server", err)
-	}
+	// jsonRPCServer, err := jsonrpcserver.NewHandler(jsonrpcserver.Methods{
+	// 	"receive": operator.Receive,
+	// })
+	// if err != nil {
+	// 	log.Fatal("Failed to create jsonrpc server", err)
+	// }
 
-	ctx, ctxCancel := context.WithCancel(context.Background())
+	// ctx, ctxCancel := context.WithCancel(context.Background())
 
-	http.Handle("/", jsonRPCServer)
-	server := &http.Server{
-		Addr:              fmt.Sprintf(":%s", "8000"),
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	// http.Handle("/", jsonRPCServer)
+	// server := &http.Server{
+	// 	Addr:              fmt.Sprintf(":%s", "8000"),
+	// 	ReadHeaderTimeout: 5 * time.Second,
+	// }
 
-	connectionsClosed := make(chan struct{})
-	go func() {
-		notifier := make(chan os.Signal, 1)
-		signal.Notify(notifier, os.Interrupt, syscall.SIGTERM)
-		<-notifier
-		log.Println("Shutting down...")
-		ctxCancel()
-		if err := server.Shutdown(context.Background()); err != nil {
-			log.Println("Failed to shutdown server", err)
-		}
-		close(connectionsClosed)
-	}()
+	// connectionsClosed := make(chan struct{})
+	// go func() {
+	// 	notifier := make(chan os.Signal, 1)
+	// 	signal.Notify(notifier, os.Interrupt, syscall.SIGTERM)
+	// 	<-notifier
+	// 	log.Println("Shutting down...")
+	// 	ctxCancel()
+	// 	if err := server.Shutdown(context.Background()); err != nil {
+	// 		log.Println("Failed to shutdown server", err)
+	// 	}
+	// 	close(connectionsClosed)
+	// }()
 
-	err = server.ListenAndServe()
-	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	// err = server.ListenAndServe()
+	// if err != nil && !errors.Is(err, http.ErrServerClosed) {
+	// 	log.Fatal("ListenAndServe: ", err)
+	// }
 
-	<-ctx.Done()
-	<-connectionsClosed
+	// <-ctx.Done()
+	// <-connectionsClosed
 
 	return nil
 }

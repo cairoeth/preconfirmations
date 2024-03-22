@@ -1,6 +1,6 @@
 VERSION := $(shell git describe --tags --always --dirty="-dev")
 
-all: clean build
+all: clean build-share build-operator build-rpc
 
 v:
 	@echo "Version: ${VERSION}"
