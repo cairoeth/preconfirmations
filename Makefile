@@ -24,7 +24,7 @@ build-all: clean build-share build-operator build-rpc
 # Run preconf-share
 run-share:
 	make build-share
-	cd preconf-share && docker compose up -d --wait && sleep 1
+	cd preconf-share && docker-compose rm -f -s && docker compose up -d --force-recreate --build --wait && sleep 1
 	for file in preconf-share/sql/*.sql; do psql "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable" -f $$file; done
 	./build/node
 
@@ -36,6 +36,10 @@ run-operator:
 # Run anvil with prepared state
 run-anvil:
 	anvil --load-state contracts/anvil-state.json
+
+# Run all components concurrently
+run-all:
+	make -j run-anvil run-share run-operator
 
 test:
 	go test ./...
