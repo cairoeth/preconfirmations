@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-share/preconshare"
+	"github.com/cairoeth/preconfirmations-avs/rpc/types"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
 )
@@ -16,6 +16,11 @@ import (
 type ReceiveApi struct {
 	ipPortAddr    string
 	logger        logging.Logger
+}
+
+type ReceiveResponse struct {
+	jsonrpc   string `json:"jsonrpc"`
+    id    	  int    `json:"id"`
 }
 
 func NewReceiveApi(IpPortAddr string, logger logging.Logger) *ReceiveApi {
@@ -41,17 +46,20 @@ func (api *ReceiveApi) Start() <-chan error {
 	return errChan
 }
 
-func (api *ReceiveApi) receive(w http.ResponseWriter, r []RequestBody) {
+func (api *ReceiveApi) receive(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+    var txs types.JsonRpcRequest
+    err := decoder.Decode(&txs)
+    if err != nil {
+        api.logger.Error("could not read request body", "err", err)
+    }
+    api.logger.Info("processed receive", "txs", txs)
+
+	
 
 
-
-
-
-	response := map[string]string{
-		"jsonrpc":    "2.0",
-		"id": "1",
-	}
-	err := jsonResponse(w, response)
+	response := &ReceiveResponse{"2.0", 1}
+	err = jsonResponse(w, response)
 	if err != nil {
 		api.logger.Error("Error in receive endpoint", "err", err)
 	}
