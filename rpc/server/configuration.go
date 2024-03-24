@@ -14,8 +14,8 @@ type Configuration struct {
 	ListenAddress       string
 	Logger              *zap.Logger
 	ProxyTimeoutSeconds int
-	ProxyUrl            string
-	RedisUrl            string
+	ProxyURL            string
+	RedisURL            string
 	RelaySigningKey     *ecdsa.PrivateKey
 	RelayUrl            string
 	Version             string

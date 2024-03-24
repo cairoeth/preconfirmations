@@ -23,7 +23,7 @@ func NewMemStore() *memStore {
 func (m *memStore) SaveRequestEntry(entry RequestEntry) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	m.Requests[entry.Id] = entry
+	m.Requests[entry.ID] = entry
 	return nil
 }
 

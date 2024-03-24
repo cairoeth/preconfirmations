@@ -43,13 +43,13 @@ var (
 	RedisExpirySenderMaxNonce = 2 * time.Hour
 )
 
-// Enable lookup of bundle txs by bundleId
+// Enable lookup of bundle txs by bundleID
 var (
 	RedisPrefixWhitehatBundleTransactions = RedisPrefix + "tx-for-whitehat-bundle:"
 	RedisExpiryWhitehatBundleTransactions = 24 * time.Hour // 1 day
 )
 
-// Enable lookup of bundle txs by bundleId
+// Enable lookup of bundle txs by bundleID
 var (
 	RedisPrefixBlockedTxHash = RedisPrefix + "blocked-tx-hash:"
 	RedisExpiryBlockedTxHash = 24 * time.Hour // 1 day
@@ -79,8 +79,8 @@ func RedisKeySenderMaxNonce(txFrom string) string {
 	return RedisPrefixSenderMaxNonce + strings.ToLower(txFrom)
 }
 
-func RedisKeyWhitehatBundleTransactions(bundleId string) string {
-	return RedisPrefixWhitehatBundleTransactions + strings.ToLower(bundleId)
+func RedisKeyWhitehatBundleTransactions(bundleID string) string {
+	return RedisPrefixWhitehatBundleTransactions + strings.ToLower(bundleID)
 }
 
 func RedisKeyBlockedTxHash(txHash string) string {
@@ -95,9 +95,9 @@ type RedisState struct {
 	RedisClient *redis.Client
 }
 
-func NewRedisState(redisUrl string) (*RedisState, error) {
+func NewRedisState(redisURL string) (*RedisState, error) {
 	// Setup redis client and check connection
-	redisClient := redis.NewClient(&redis.Options{Addr: redisUrl})
+	redisClient := redis.NewClient(&redis.Options{Addr: redisURL})
 
 	// Try to get a key to see if there's an error with the connection
 	if err := redisClient.Get(context.Background(), "somekey").Err(); err != nil && err != redis.Nil {
@@ -203,11 +203,11 @@ func (s *RedisState) GetSenderOfTxHash(txHash string) (txSender string, found bo
 }
 
 // Enable lookup of tx bundles by bundle ID
-func (s *RedisState) AddTxToWhitehatBundle(bundleId, signedTx string) error {
-	key := RedisKeyWhitehatBundleTransactions(bundleId)
+func (s *RedisState) AddTxToWhitehatBundle(bundleID, signedTx string) error {
+	key := RedisKeyWhitehatBundleTransactions(bundleID)
 
 	// Check if item already exists
-	txs, err := s.GetWhitehatBundleTx(bundleId)
+	txs, err := s.GetWhitehatBundleTx(bundleID)
 	if err == nil {
 		for _, tx := range txs {
 			if signedTx == tx {
@@ -233,13 +233,13 @@ func (s *RedisState) AddTxToWhitehatBundle(bundleId, signedTx string) error {
 	return err
 }
 
-func (s *RedisState) GetWhitehatBundleTx(bundleId string) ([]string, error) {
-	key := RedisKeyWhitehatBundleTransactions(bundleId)
+func (s *RedisState) GetWhitehatBundleTx(bundleID string) ([]string, error) {
+	key := RedisKeyWhitehatBundleTransactions(bundleID)
 	return s.RedisClient.LRange(context.Background(), key, 0, -1).Result()
 }
 
-func (s *RedisState) DelWhitehatBundleTx(bundleId string) error {
-	key := RedisKeyWhitehatBundleTransactions(bundleId)
+func (s *RedisState) DelWhitehatBundleTx(bundleID string) error {
+	key := RedisKeyWhitehatBundleTransactions(bundleID)
 	return s.RedisClient.Del(context.Background(), key).Err()
 }
 

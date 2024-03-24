@@ -8,10 +8,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var ProtectTxApiHost = GetEnv("TX_API_HOST", "https://protect.flashbots.net")
+var ProtectTxAPIHost = GetEnv("TX_API_HOST", "https://protect.flashbots.net")
 
 // If public getTransactionReceipt of a submitted tx is null, then check internal API to see if tx has failed
-func (r *RpcRequest) check_post_getTransactionReceipt(jsonResp *types.JsonRpcResponse) (requestFinished bool) {
+func (r *RPCRequest) check_post_getTransactionReceipt(jsonResp *types.JSONRPCResponse) (requestFinished bool) {
 	if jsonResp == nil {
 		return false
 	}
@@ -29,7 +29,7 @@ func (r *RpcRequest) check_post_getTransactionReceipt(jsonResp *types.JsonRpcRes
 	r.logger.Info("[post_getTransactionReceipt] eth_getTransactionReceipt is null, check if it was a private tx", zap.String("txHash", txHashLower))
 
 	// get tx status from private-tx-api
-	statusApiResponse, err := GetTxStatus(txHashLower)
+	statusAPIResponse, err := GetTxStatus(txHashLower)
 	if err != nil {
 		r.logger.Error("[post_getTransactionReceipt] PrivateTxApi failed", zap.Error(err))
 		return false
@@ -69,14 +69,14 @@ func (r *RpcRequest) check_post_getTransactionReceipt(jsonResp *types.JsonRpcRes
 	}
 
 	r.logger.Info("[post_getTransactionReceipt] Priv-tx-api status")
-	if statusApiResponse.Status == types.TxStatusFailed || (DebugDontSendTx && statusApiResponse.Status == types.TxStatusUnknown) {
+	if statusAPIResponse.Status == types.TxStatusFailed || (DebugDontSendTx && statusAPIResponse.Status == types.TxStatusUnknown) {
 		r.logger.Info("[post_getTransactionReceipt] Failed private tx, ensure account fix is in place")
 		ensureAccountFixIsInPlace()
-		// r.writeRpcError("Transaction failed") // If this is sent before metamask dropped the tx (received 4x invalid nonce), then it doesn't call getTransactionCount anymore
+		// r.writeRPCError("Transaction failed") // If this is sent before metamask dropped the tx (received 4x invalid nonce), then it doesn't call getTransactionCount anymore
 		// TODO: return standard failed tx payload?
 		return false
 
-		// } else if statusApiResponse.Status == types.TxStatusIncluded {
+		// } else if statusAPIResponse.Status == types.TxStatusIncluded {
 		// 	// NOTE: This branch can never happen, because if tx is included then Receipt will not return null
 		// 	// TODO? If latest tx of this user was a successful, then we should remove the nonce fix
 		// 	// This could lead to a ping-pong between checking 2 tx, with one check adding and another removing the nonce fix
@@ -87,7 +87,7 @@ func (r *RpcRequest) check_post_getTransactionReceipt(jsonResp *types.JsonRpcRes
 	return false
 }
 
-func (r *RpcRequest) intercept_mm_eth_getTransactionCount() (requestFinished bool) {
+func (r *RPCRequest) interceptMmEthGetTransactionCount() (requestFinished bool) {
 	if len(r.jsonReq.Params) < 1 {
 		return false
 	}
@@ -122,13 +122,13 @@ func (r *RpcRequest) intercept_mm_eth_getTransactionCount() (requestFinished boo
 	// Return invalid nonce
 	var wrongNonce uint64 = 1e9 + 1
 	resp := fmt.Sprintf("0x%x", wrongNonce)
-	r.writeRpcResult(resp)
+	r.writeRPCResult(resp)
 	r.logger.Info("[eth_getTransactionCount] Intercepted eth_getTransactionCount for", zap.String("address", addr))
 	return true
 }
 
 // Returns true if request has already received a response, false if req should contiue to normal proxy
-func (r *RpcRequest) intercept_eth_call_to_FlashRPC_Contract() (requestFinished bool) {
+func (r *RPCRequest) interceptEthCallToFlashRPCContract() (requestFinished bool) {
 	if len(r.jsonReq.Params) < 1 {
 		return false
 	}
@@ -147,7 +147,7 @@ func (r *RpcRequest) intercept_eth_call_to_FlashRPC_Contract() (requestFinished 
 		return false
 	}
 
-	r.writeRpcResult("0x0000000000000000000000000000000000000000000000000000000000000001")
+	r.writeRPCResult("0x0000000000000000000000000000000000000000000000000000000000000001")
 	r.logger.Info("Intercepted eth_call to FlashRPC contract")
 	return true
 }

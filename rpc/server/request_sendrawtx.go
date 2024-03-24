@@ -16,25 +16,25 @@ const (
 	scMethodBytes = 4 // first 4 byte of data field
 )
 
-func (r *RpcRequest) handle_sendRawTransaction() {
+func (r *RPCRequest) handleSendRawTransaction() {
 	var err error
 
 	// JSON-RPC sanity checks
 	if len(r.jsonReq.Params) < 1 {
 		r.logger.Info("[sendRawTransaction] No params for eth_sendRawTransaction")
-		r.writeRpcError("empty params for eth_sendRawTransaction", types.JsonRpcInvalidParams)
+		r.writeRPCError("empty params for eth_sendRawTransaction", types.JSONRPCInvalidParams)
 		return
 	}
 
 	if r.jsonReq.Params[0] == nil {
 		r.logger.Info("[sendRawTransaction]  Nil param for eth_sendRawTransaction")
-		r.writeRpcError("nil params for eth_sendRawTransaction", types.JsonRpcInvalidParams)
+		r.writeRPCError("nil params for eth_sendRawTransaction", types.JSONRPCInvalidParams)
 	}
 
 	r.rawTxHex = r.jsonReq.Params[0].(string)
 	if len(r.rawTxHex) < 2 {
 		r.logger.Error("[sendRawTransaction] Invalid raw transaction (wrong length)")
-		r.writeRpcError("invalid raw transaction param (wrong length)", types.JsonRpcInvalidParams)
+		r.writeRPCError("invalid raw transaction param (wrong length)", types.JSONRPCInvalidParams)
 		return
 	}
 
@@ -43,7 +43,7 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 	r.tx, err = GetTx(r.rawTxHex)
 	if err != nil {
 		r.logger.Info("[sendRawTransaction] Reading transaction object failed", zap.String("tx", r.rawTxHex))
-		r.writeRpcError(fmt.Sprintf("reading transaction object failed - rawTx: %s", r.rawTxHex), types.JsonRpcInvalidRequest)
+		r.writeRPCError(fmt.Sprintf("reading transaction object failed - rawTx: %s", r.rawTxHex), types.JSONRPCInvalidRequest)
 		return
 	}
 	r.ethSendRawTxEntry.TxHash = r.tx.Hash().String()
@@ -52,7 +52,7 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 	if err != nil {
 
 		r.logger.Info("[sendRawTransaction] Couldn't get address from rawTx", zap.Error(err))
-		r.writeRpcError(fmt.Sprintf("couldn't get address from rawTx: %v", err), types.JsonRpcInvalidRequest)
+		r.writeRPCError(fmt.Sprintf("couldn't get address from rawTx: %v", err), types.JSONRPCInvalidRequest)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 
 	if r.tx.Nonce() >= 1e9 {
 		r.logger.Info("[sendRawTransaction] tx rejected - nonce too high", zap.Uint64("txNonce", r.tx.Nonce()), zap.String("txHash", r.tx.Hash().Hex()), zap.String("txFromLower", txFromLower), zap.String("origin", r.origin))
-		r.writeRpcError("tx rejected - nonce too high", types.JsonRpcInvalidRequest)
+		r.writeRPCError("tx rejected - nonce too high", types.JSONRPCInvalidRequest)
 		return
 	}
 
@@ -83,7 +83,7 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 	retVal, isBlocked, _ := RState.GetBlockedTxHash(txHashLower)
 	if isBlocked {
 		r.logger.Info("[sendRawTransaction] tx blocked", zap.String("txHash", r.tx.Hash().Hex()), zap.String("retVal", retVal))
-		r.writeRpcError(retVal, types.JsonRpcInternalError)
+		r.writeRPCError(retVal, types.JSONRPCInternalError)
 		return
 	}
 
@@ -100,7 +100,7 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 	r.ethSendRawTxEntry.IsOnOafcList = isOnOfacList
 	if isOnOfacList {
 		r.logger.Info("[sendRawTransaction] Blocked tx due to ofac sanctioned address", zap.String("txHash", txHashLower), zap.String("txFrom", r.txFrom), zap.String("txTo", txToAddr))
-		r.writeRpcError("blocked tx due to ofac sanctioned address", types.JsonRpcInvalidRequest)
+		r.writeRPCError("blocked tx due to ofac sanctioned address", types.JSONRPCInvalidRequest)
 		return
 	}
 
@@ -109,14 +109,14 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 	r.ethSendRawTxEntry.NeedsFrontRunningProtection = needsProtection
 	// If users specify a bundle ID, cache this transaction
 	// if r.isWhitehatBundleCollection {
-	// 	r.logger.Info("[WhitehatBundleCollection] Adding tx to bundle", zap.String("whiteHatBundleId", r.whitehatBundleId), zap.String("tx", r.rawTxHex))
-	// 	err = RState.AddTxToWhitehatBundle(r.whitehatBundleId, r.rawTxHex)
+	// 	r.logger.Info("[WhitehatBundleCollection] Adding tx to bundle", zap.String("whiteHatBundleId", r.whitehatBundleID), zap.String("tx", r.rawTxHex))
+	// 	err = RState.AddTxToWhitehatBundle(r.whitehatBundleID, r.rawTxHex)
 	// 	if err != nil {
 	// 		r.logger.Error("[WhitehatBundleCollection] AddTxToWhitehatBundle failed", zap.Error(err))
-	// 		r.writeRpcError("[WhitehatBundleCollection] AddTxToWhitehatBundle failed:", types.JsonRpcInternalError)
+	// 		r.writeRPCError("[WhitehatBundleCollection] AddTxToWhitehatBundle failed:", types.JSONRPCInternalError)
 	// 		return
 	// 	}
-	// 	r.writeRpcResult(r.tx.Hash().Hex())
+	// 	r.writeRPCResult(r.tx.Hash().Hex())
 	// 	return
 	// }
 
@@ -142,17 +142,17 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 
 	if DebugDontSendTx {
 		r.logger.Info("[sendRawTransaction] Faked sending tx to mempool, did nothing")
-		r.writeRpcResult(r.tx.Hash().Hex())
+		r.writeRPCResult(r.tx.Hash().Hex())
 		return
 	}
 
 	// Proxy to public node now
-	readJsonRpcSuccess := r.proxyRequestRead()
+	readJSONRPCSuccess := r.proxyRequestRead()
 	r.ethSendRawTxEntry.WasSentToMempool = true
 	// Log after proxying
-	if !readJsonRpcSuccess {
+	if !readJSONRPCSuccess {
 		r.logger.Error("[sendRawTransaction] Proxy to mempool failed")
-		r.writeRpcError("internal server error", types.JsonRpcInternalError)
+		r.writeRPCError("internal server error", types.JSONRPCInternalError)
 		return
 	}
 
@@ -173,7 +173,7 @@ func (r *RpcRequest) handle_sendRawTransaction() {
 
 // Check if a request needs frontrunning protection. There are many transactions that don't need frontrunning protection,
 // for example simple ERC20 transfers.
-func (r *RpcRequest) doesTxNeedFrontrunningProtection(tx *ethtypes.Transaction) bool {
+func (r *RPCRequest) doesTxNeedFrontrunningProtection(tx *ethtypes.Transaction) bool {
 	gas := tx.Gas()
 	r.logger.Info("[protect-check]", zap.Uint64("gas", gas))
 

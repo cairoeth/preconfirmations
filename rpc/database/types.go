@@ -8,16 +8,16 @@ import (
 
 // RequestEntry to store each request
 type RequestEntry struct {
-	Id                 uuid.UUID `db:"id"`
+	ID                 uuid.UUID `db:"id"`
 	ReceivedAt         time.Time `db:"received_at"`
 	InsertedAt         time.Time `db:"inserted_at"`
 	RequestDurationMs  int64     `db:"request_duration_ms"`
 	IsBatchRequest     bool      `db:"is_batch_request"`
 	NumRequestInBatch  int       `db:"num_request_in_batch"`
-	HttpMethod         string    `db:"http_method"`
-	HttpUrl            string    `db:"http_url"`
-	HttpQueryParam     string    `db:"http_query_param"`
-	HttpResponseStatus int       `db:"http_response_status"`
+	HTTPMethod         string    `db:"http_method"`
+	HTTPURL            string    `db:"http_url"`
+	HTTPQueryParam     string    `db:"http_query_param"`
+	HTTPResponseStatus int       `db:"http_response_status"`
 	Origin             string    `db:"origin"`
 	Host               string    `db:"host"`
 	Error              string    `db:"error"`
@@ -25,12 +25,12 @@ type RequestEntry struct {
 
 // EthSendRawTxEntry to store each eth_sendRawTransaction calls
 type EthSendRawTxEntry struct {
-	Id                          uuid.UUID `db:"id"`
+	ID                          uuid.UUID `db:"id"`
 	RequestId                   uuid.UUID `db:"request_id"` // id from RequestEntry table
 	InsertedAt                  time.Time `db:"inserted_at"`
 	IsOnOafcList                bool      `db:"is_on_oafc_list"`
 	IsWhiteHatBundleCollection  bool      `db:"is_white_hat_bundle_collection"`
-	WhiteHatBundleId            string    `db:"white_hat_bundle_id"`
+	WhiteHatBundleID            string    `db:"white_hat_bundle_id"`
 	IsCancelTx                  bool      `db:"is_cancel_tx"`
 	NeedsFrontRunningProtection bool      `db:"needs_front_running_protection"`
 	WasSentToRelay              bool      `db:"was_sent_to_relay"`

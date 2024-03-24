@@ -13,41 +13,41 @@ import (
 // As per JSON-RPC 2.0 Specification
 // https://www.jsonrpc.org/specification#error_object
 const (
-	JsonRpcParseError     = -32700
-	JsonRpcInvalidRequest = -32600
-	JsonRpcMethodNotFound = -32601
-	JsonRpcInvalidParams  = -32602
-	JsonRpcInternalError  = -32603
+	JSONRPCParseError     = -32700
+	JSONRPCInvalidRequest = -32600
+	JSONRPCMethodNotFound = -32601
+	JSONRPCInvalidParams  = -32602
+	JSONRPCInternalError  = -32603
 )
 
-type JsonRpcRequest struct {
-	Id      interface{}   `json:"id"`
+type JSONRPCRequest struct {
+	ID      interface{}   `json:"id"`
 	Method  string        `json:"method"`
 	Params  []interface{} `json:"params"`
 	Version string        `json:"jsonrpc,omitempty"`
 }
 
-func NewJsonRpcRequest(id interface{}, method string, params []interface{}) *JsonRpcRequest {
-	return &JsonRpcRequest{
-		Id:      id,
+func NewJSONRPCRequest(id interface{}, method string, params []interface{}) *JSONRPCRequest {
+	return &JSONRPCRequest{
+		ID:      id,
 		Method:  method,
 		Params:  params,
 		Version: "2.0",
 	}
 }
 
-func NewJsonRpcRequest1(id interface{}, method string, param interface{}) *JsonRpcRequest {
-	return NewJsonRpcRequest(id, method, []interface{}{param})
+func NewJSONRPCRequest1(id interface{}, method string, param interface{}) *JSONRPCRequest {
+	return NewJSONRPCRequest(id, method, []interface{}{param})
 }
 
-type JsonRpcResponse struct {
-	Id      interface{}     `json:"id"`
+type JSONRPCResponse struct {
+	ID      interface{}     `json:"id"`
 	Result  json.RawMessage `json:"result,omitempty"`
 	Error   *JSONRPCError   `json:"error,omitempty"`
 	Version string          `json:"jsonrpc"`
 }
 
-// RpcError: https://www.jsonrpc.org/specification#error_object
+// JSONRPCError: https://www.jsonrpc.org/specification#error_object
 type JSONRPCError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
@@ -57,9 +57,9 @@ func (err JSONRPCError) Error() string {
 	return fmt.Sprintf("Error %d (%s)", err.Code, err.Message)
 }
 
-func NewJsonRpcResponse(id interface{}, result json.RawMessage) *JsonRpcResponse {
-	return &JsonRpcResponse{
-		Id:      id,
+func NewJSONRPCResponse(id interface{}, result json.RawMessage) *JSONRPCResponse {
+	return &JSONRPCResponse{
+		ID:      id,
 		Result:  result,
 		Version: "2.0",
 	}
@@ -95,7 +95,7 @@ var (
 	TxStatusFailed   PrivateTxStatus = "FAILED"
 )
 
-type PrivateTxApiResponse struct {
+type PrivateTxAPIResponse struct {
 	Status         PrivateTxStatus `json:"status"`
 	Hash           string          `json:"hash"`
 	MaxBlockNumber int             `json:"maxBlockNumber"`
@@ -106,7 +106,7 @@ type RelayErrorResponse struct {
 }
 
 type BundleResponse struct {
-	BundleId string   `json:"bundleId"`
+	BundleID string   `json:"bundleID"`
 	RawTxs   []string `json:"rawTxs"`
 }
 

@@ -8,29 +8,29 @@ import (
 	"go.uber.org/zap"
 )
 
-func (r *RpcRequestHandler) writeHeaderContentTypeJson() {
+func (r *RPCRequestHandler) writeHeaderContentTypeJSON() {
 	(*r.respw).Header().Set("Content-Type", "application/json")
 }
 
-func (r *RpcRequestHandler) _writeRpcResponse(res *types.JsonRpcResponse) {
+func (r *RPCRequestHandler) _writeRPCResponse(res *types.JSONRPCResponse) {
 	// If the request is single and not batch
 	// Write content type
-	r.writeHeaderContentTypeJson() // Set content type to json
+	r.writeHeaderContentTypeJSON() // Set content type to json
 	(*r.respw).WriteHeader(http.StatusOK)
 	// Write response
 	if err := json.NewEncoder(*r.respw).Encode(res); err != nil {
-		r.logger.Error("[_writeRpcResponse] Failed writing rpc response", zap.Error(err))
+		r.logger.Error("[_writeRPCResponse] Failed writing rpc response", zap.Error(err))
 		(*r.respw).WriteHeader(http.StatusInternalServerError)
 	}
 }
 
 //lint:ignore U1000 Ignore all unused code, it's generated
-func (r *RpcRequestHandler) _writeRpcBatchResponse(res []*types.JsonRpcResponse) {
-	r.writeHeaderContentTypeJson() // Set content type to json
+func (r *RPCRequestHandler) _writeRPCBatchResponse(res []*types.JSONRPCResponse) {
+	r.writeHeaderContentTypeJSON() // Set content type to json
 	(*r.respw).WriteHeader(http.StatusOK)
 	// Write response
 	if err := json.NewEncoder(*r.respw).Encode(res); err != nil {
-		r.logger.Error("[_writeRpcBatchResponse] Failed writing rpc response", zap.Error(err))
+		r.logger.Error("[_writeRPCBatchResponse] Failed writing rpc response", zap.Error(err))
 		(*r.respw).WriteHeader(http.StatusInternalServerError)
 	}
 }

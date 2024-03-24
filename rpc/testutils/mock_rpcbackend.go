@@ -17,25 +17,25 @@ import (
 
 var (
 	MockBackendLastRawRequest              *http.Request
-	MockBackendLastJsonRpcRequest          *types.JsonRpcRequest
-	MockBackendLastJsonRpcRequestTimestamp time.Time
+	MockBackendLastJSONRPCRequest          *types.JSONRPCRequest
+	MockBackendLastJSONRPCRequestTimestamp time.Time
 )
 
-func MockRpcBackendReset() {
+func MockRPCBackendReset() {
 	MockBackendLastRawRequest = nil
-	MockBackendLastJsonRpcRequest = nil
-	MockBackendLastJsonRpcRequestTimestamp = time.Time{}
+	MockBackendLastJSONRPCRequest = nil
+	MockBackendLastJSONRPCRequestTimestamp = time.Time{}
 }
 
-func handleRpcRequest(req *types.JsonRpcRequest) (result interface{}, err error) {
-	MockBackendLastJsonRpcRequest = req
+func handleRPCRequest(req *types.JSONRPCRequest) (result interface{}, err error) {
+	MockBackendLastJSONRPCRequest = req
 
 	switch req.Method {
 	case "eth_getTransactionCount":
-		if req.Params[0] == TestTx_BundleFailedTooManyTimes_From {
-			return TestTx_BundleFailedTooManyTimes_Nonce, nil
-		} else if req.Params[0] == TestTx_CancelAtRelay_Cancel_From {
-			return TestTx_CancelAtRelay_Cancel_Nonce, nil
+		if req.Params[0] == TestTxBundleFailedTooManyTimesFrom {
+			return TestTxBundleFailedTooManyTimesNonce, nil
+		} else if req.Params[0] == TestTxCancelAtRelayCancelFrom {
+			return TestTxCancelAtRelayCancelNonce, nil
 		}
 		return "0x22", nil
 
@@ -43,16 +43,16 @@ func handleRpcRequest(req *types.JsonRpcRequest) (result interface{}, err error)
 		return "0x12345", nil
 
 	case "eth_getTransactionReceipt":
-		if req.Params[0] == TestTx_BundleFailedTooManyTimes_Hash {
+		if req.Params[0] == TestTxBundleFailedTooManyTimesHash {
 			return nil, nil
-		} else if req.Params[0] == TestTx_MM2_Hash {
+		} else if req.Params[0] == TestTxMM2Hash {
 			return nil, nil
 		}
 
 	case "eth_sendRawTransaction":
 		txHash := req.Params[0].(string)
-		if txHash == TestTx_CancelAtRelay_Cancel_RawTx {
-			return TestTx_CancelAtRelay_Cancel_Hash, nil
+		if txHash == TestTxCancelAtRelayCancelRawTx {
+			return TestTxCancelAtRelayCancelHash, nil
 		}
 		return "tx-hash1", nil
 
@@ -65,15 +65,15 @@ func handleRpcRequest(req *types.JsonRpcRequest) (result interface{}, err error)
 		// Relay calls
 	case "eth_sendPrivateTransaction":
 		param := req.Params[0].(map[string]interface{})
-		if param["tx"] == TestTx_BundleFailedTooManyTimes_RawTx {
-			return TestTx_BundleFailedTooManyTimes_Hash, nil
+		if param["tx"] == TestTxBundleFailedTooManyTimesRawTx {
+			return TestTxBundleFailedTooManyTimesHash, nil
 		} else {
 			return "tx-hash2", nil
 		}
 
 	case "eth_cancelPrivateTransaction":
 		param := req.Params[0].(map[string]interface{})
-		if param["txHash"] == TestTx_CancelAtRelay_Cancel_Hash {
+		if param["txHash"] == TestTxCancelAtRelayCancelHash {
 			return true, nil
 		} else {
 			return false, nil
@@ -83,10 +83,10 @@ func handleRpcRequest(req *types.JsonRpcRequest) (result interface{}, err error)
 	return "", fmt.Errorf("no RPC method handler implemented for %s", req.Method)
 }
 
-func RpcBackendHandler(w http.ResponseWriter, req *http.Request) {
+func RPCBackendHandler(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	MockBackendLastRawRequest = req
-	MockBackendLastJsonRpcRequestTimestamp = time.Now()
+	MockBackendLastJSONRPCRequestTimestamp = time.Now()
 
 	log.Printf("%s %s %s\n", req.RemoteAddr, req.Method, req.URL)
 
@@ -96,8 +96,8 @@ func RpcBackendHandler(w http.ResponseWriter, req *http.Request) {
 
 	returnError := func(id interface{}, msg string) {
 		log.Println("returnError:", msg)
-		res := types.JsonRpcResponse{
-			Id: id,
+		res := types.JSONRPCResponse{
+			ID: id,
 			Error: &types.JSONRPCError{
 				Code:    -32603,
 				Message: msg,
@@ -116,15 +116,15 @@ func RpcBackendHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Parse JSON RPC
-	jsonReq := new(types.JsonRpcRequest)
+	jsonReq := new(types.JSONRPCRequest)
 	if err = json.Unmarshal(body, &jsonReq); err != nil {
 		returnError(-1, fmt.Sprintf("failed to parse JSON RPC request: %v", err))
 		return
 	}
 
-	rawRes, err := handleRpcRequest(jsonReq)
+	rawRes, err := handleRPCRequest(jsonReq)
 	if err != nil {
-		returnError(jsonReq.Id, err.Error())
+		returnError(jsonReq.ID, err.Error())
 		return
 	}
 
@@ -134,7 +134,7 @@ func RpcBackendHandler(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("error mashalling rawRes:", rawRes, err)
 	}
 
-	res := types.NewJsonRpcResponse(jsonReq.Id, resBytes)
+	res := types.NewJSONRPCResponse(jsonReq.ID, resBytes)
 
 	// Write to client request
 	if err := json.NewEncoder(w).Encode(res); err != nil {

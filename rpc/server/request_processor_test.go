@@ -24,10 +24,10 @@ func setupRedis() {
 	}
 }
 
-func setupMockTxApi() {
-	txApiServer := httptest.NewServer(http.HandlerFunc(testutils.MockTxApiHandler))
-	ProtectTxApiHost = txApiServer.URL
-	testutils.MockTxApiReset()
+func setupMockTxAPI() {
+	txAPIServer := httptest.NewServer(http.HandlerFunc(testutils.MockTxAPIHandler))
+	ProtectTxAPIHost = txAPIServer.URL
+	testutils.MockTxAPIReset()
 }
 
 func setServerTimeNowOffset(td time.Duration) {
@@ -38,9 +38,9 @@ func setServerTimeNowOffset(td time.Duration) {
 
 func TestRequestshouldSendTxToRelay(t *testing.T) {
 	setupRedis()
-	setupMockTxApi()
+	setupMockTxAPI()
 
-	request := RpcRequest{}
+	request := RPCRequest{}
 	txHash := "0x0Foo"
 
 	// SEND when not seen before
@@ -52,29 +52,29 @@ func TestRequestshouldSendTxToRelay(t *testing.T) {
 	require.Nil(t, err, err)
 
 	// Ensure tx status is UNKNOWN
-	txStatusApiResponse, err := GetTxStatus(txHash)
+	txStatusAPIResponse, err := GetTxStatus(txHash)
 	require.Nil(t, err, err)
-	require.Equal(t, types.TxStatusUnknown, txStatusApiResponse.Status)
+	require.Equal(t, types.TxStatusUnknown, txStatusAPIResponse.Status)
 
 	// NOT SEND when unknown and time since sent < 5 min
 	shouldSend = !request.blockResendingTxToRelay(txHash)
 	require.False(t, shouldSend)
 
 	// Set tx status to Failed
-	testutils.MockTxApiStatusForHash[txHash] = types.TxStatusFailed
-	txStatusApiResponse, err = GetTxStatus(txHash)
+	testutils.MockTxAPIStatusForHash[txHash] = types.TxStatusFailed
+	txStatusAPIResponse, err = GetTxStatus(txHash)
 	require.Nil(t, err, err)
-	require.Equal(t, types.TxStatusFailed, txStatusApiResponse.Status)
+	require.Equal(t, types.TxStatusFailed, txStatusAPIResponse.Status)
 
 	// SEND if failed
 	shouldSend = !request.blockResendingTxToRelay(txHash)
 	require.True(t, shouldSend)
 
 	// Set tx status to pending
-	testutils.MockTxApiStatusForHash[txHash] = types.TxStatusPending
-	txStatusApiResponse, err = GetTxStatus(txHash)
+	testutils.MockTxAPIStatusForHash[txHash] = types.TxStatusPending
+	txStatusAPIResponse, err = GetTxStatus(txHash)
 	require.Nil(t, err, err)
-	require.Equal(t, types.TxStatusPending, txStatusApiResponse.Status)
+	require.Equal(t, types.TxStatusPending, txStatusAPIResponse.Status)
 
 	// NOT SEND if pending
 	shouldSend = !request.blockResendingTxToRelay(txHash)
@@ -96,9 +96,9 @@ func TestRequestshouldSendTxToRelay(t *testing.T) {
 	require.True(t, time.Since(timeSent) > time.Minute*4)
 
 	// Ensure tx status is UNKNOWN
-	txStatusApiResponse, err = GetTxStatus(txHash)
+	txStatusAPIResponse, err = GetTxStatus(txHash)
 	require.Nil(t, err, err)
-	require.Equal(t, types.TxStatusUnknown, txStatusApiResponse.Status)
+	require.Equal(t, types.TxStatusUnknown, txStatusAPIResponse.Status)
 
 	shouldSend = !request.blockResendingTxToRelay(txHash)
 	require.True(t, shouldSend)

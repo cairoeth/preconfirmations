@@ -201,38 +201,38 @@ func TestSenderMaxNonce(t *testing.T) {
 
 func TestWhitehatTx(t *testing.T) {
 	resetRedis()
-	bundleId := "123"
+	bundleID := "123"
 
 	// get (empty)
-	txs, err := redisState.GetWhitehatBundleTx(bundleId)
+	txs, err := redisState.GetWhitehatBundleTx(bundleID)
 	require.Nil(t, err, err)
 	require.Equal(t, 0, len(txs))
 
 	// add #1
 	tx1 := "0xa12345"
 	tx2 := "0xb123456"
-	err = redisState.AddTxToWhitehatBundle(bundleId, tx1)
+	err = redisState.AddTxToWhitehatBundle(bundleID, tx1)
 	require.Nil(t, err, err)
 
-	txs, err = redisState.GetWhitehatBundleTx(bundleId)
+	txs, err = redisState.GetWhitehatBundleTx(bundleID)
 	require.Nil(t, err, err)
 	require.Equal(t, 1, len(txs))
 
-	err = redisState.AddTxToWhitehatBundle(bundleId, tx1)
+	err = redisState.AddTxToWhitehatBundle(bundleID, tx1)
 	require.Nil(t, err, err)
-	err = redisState.AddTxToWhitehatBundle(bundleId, tx2)
+	err = redisState.AddTxToWhitehatBundle(bundleID, tx2)
 	require.Nil(t, err, err)
 
-	txs, err = redisState.GetWhitehatBundleTx(bundleId)
+	txs, err = redisState.GetWhitehatBundleTx(bundleID)
 	require.Nil(t, err, err)
 	require.Equal(t, 2, len(txs))
 	require.Equal(t, tx2, txs[0])
 	require.Equal(t, tx1, txs[1])
 
-	err = redisState.DelWhitehatBundleTx(bundleId)
+	err = redisState.DelWhitehatBundleTx(bundleID)
 	require.Nil(t, err, err)
 
-	txs, err = redisState.GetWhitehatBundleTx(bundleId)
+	txs, err = redisState.GetWhitehatBundleTx(bundleID)
 	require.Nil(t, err, err)
 	require.Equal(t, 0, len(txs))
 }

@@ -17,7 +17,7 @@ var (
 	ErrEmptyHintQuery                      = errors.New("Hint query must be non-empty if set.")
 	ErrEmptyTargetBuilderQuery             = errors.New("Target builder query must be non-empty if set.")
 	ErrIncorrectAuctionHints               = errors.New("Incorrect auction hint, must be one of: contract_address, function_selector, logs, calldata, default_logs.")
-	ErrIncorrectOriginId                   = errors.New("Incorrect origin id, must be less then 255 char.")
+	ErrIncorrectOriginID                   = errors.New("Incorrect origin id, must be less then 255 char.")
 	ErrIncorrectRefundQuery                = errors.New("Incorrect refund query, must be 0xaddress:percentage.")
 	ErrIncorrectRefundAddressQuery         = errors.New("Incorrect refund address.")
 	ErrIncorrectRefundPercentageQuery      = errors.New("Incorrect refund percentage.")
@@ -27,14 +27,14 @@ var (
 type URLParameters struct {
 	pref       types.PrivateTxPreferences
 	prefWasSet bool
-	originId   string
+	originID   string
 	fast       bool
 }
 
 // ExtractParametersFromUrl extracts the auction preference from the url query
 // Allowed query params:
 //   - hint: mev share hints, can be set multiple times, default: hash, special_logs
-//   - originId: origin id, default: ""
+//   - originID: origin id, default: ""
 //   - builder: target builder, can be set multiple times, default: empty (only send to flashbots builders)
 //   - refund: refund in the form of 0xaddress:percentage, default: empty (will be set by default when backrun is produced)
 //     example: 0x123:80 - will refund 80% of the backrun profit to 0x123
@@ -61,12 +61,12 @@ func ExtractParametersFromUrl(url *url.URL, allBuilders []string) (params URLPar
 	}
 	params.pref.Privacy.Hints = hint
 
-	originIdQuery, ok := url.Query()["originId"]
+	originIDQuery, ok := url.Query()["originID"]
 	if ok {
-		if len(originIdQuery) == 0 {
-			return params, ErrIncorrectOriginId
+		if len(originIDQuery) == 0 {
+			return params, ErrIncorrectOriginID
 		}
-		params.originId = originIdQuery[0]
+		params.originID = originIDQuery[0]
 	}
 
 	targetBuildersQuery, ok := url.Query()["builder"]
@@ -135,11 +135,11 @@ func ExtractParametersFromUrl(url *url.URL, allBuilders []string) (params URLPar
 	return params, nil
 }
 
-func AuctionPreferenceErrorToJSONRPCResponse(jsonReq *types.JsonRpcRequest, err error) *types.JsonRpcResponse {
+func AuctionPreferenceErrorToJSONRPCResponse(jsonReq *types.JSONRPCRequest, err error) *types.JSONRPCResponse {
 	message := fmt.Sprintf("Invalid auction preference in the rpc endpoint url. %s", err.Error())
-	return &types.JsonRpcResponse{
-		Id:      jsonReq.Id,
-		Error:   &types.JSONRPCError{Code: types.JsonRpcInvalidRequest, Message: message},
+	return &types.JSONRPCResponse{
+		ID:      jsonReq.ID,
+		Error:   &types.JSONRPCError{Code: types.JSONRPCInvalidRequest, Message: message},
 		Version: "2.0",
 	}
 }

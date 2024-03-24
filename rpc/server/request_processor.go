@@ -27,16 +27,16 @@ import (
 	"go.uber.org/zap"
 )
 
-type RpcRequest struct {
+type RPCRequest struct {
 	logger                     *zap.Logger
 	client                     RPCProxyClient
-	jsonReq                    *types.JsonRpcRequest
-	jsonRes                    *types.JsonRpcResponse
+	jsonReq                    *types.JSONRPCRequest
+	jsonRes                    *types.JSONRPCResponse
 	rawTxHex                   string
 	tx                         *ethtypes.Transaction
 	txFrom                     string
 	relaySigningKey            *ecdsa.PrivateKey
-	relayUrl                   string
+	relayURL                   string
 	origin                     string
 	referer                    string
 	isWhitehatBundleCollection bool
@@ -46,13 +46,13 @@ type RpcRequest struct {
 	chainID                    []byte
 }
 
-func NewRpcRequest(logger *zap.Logger, client RPCProxyClient, jsonReq *types.JsonRpcRequest, relaySigningKey *ecdsa.PrivateKey, relayUrl, origin, referer string, isWhitehatBundleCollection bool, proxyURL string, ethSendRawTxEntry *database.EthSendRawTxEntry, urlParams URLParameters, chainID []byte) *RpcRequest {
-	return &RpcRequest{
+func NewRPCRequest(logger *zap.Logger, client RPCProxyClient, jsonReq *types.JSONRPCRequest, relaySigningKey *ecdsa.PrivateKey, relayURL, origin, referer string, isWhitehatBundleCollection bool, proxyURL string, ethSendRawTxEntry *database.EthSendRawTxEntry, urlParams URLParameters, chainID []byte) *RPCRequest {
+	return &RPCRequest{
 		logger:                     logger,
 		client:                     client,
 		jsonReq:                    jsonReq,
 		relaySigningKey:            relaySigningKey,
-		relayUrl:                   relayUrl,
+		relayURL:                   relayURL,
 		origin:                     origin,
 		referer:                    referer,
 		isWhitehatBundleCollection: isWhitehatBundleCollection,
@@ -63,7 +63,7 @@ func NewRpcRequest(logger *zap.Logger, client RPCProxyClient, jsonReq *types.Jso
 	}
 }
 
-func (r *RpcRequest) logRequest() {
+func (r *RPCRequest) logRequest() {
 	if r.jsonReq.Method == "eth_call" && len(r.jsonReq.Params) > 0 {
 		p := r.jsonReq.Params[0].(map[string]interface{})
 		_to := ""
@@ -84,28 +84,28 @@ func (r *RpcRequest) logRequest() {
 	}
 }
 
-func (r *RpcRequest) ProcessRequest() *types.JsonRpcResponse {
+func (r *RPCRequest) ProcessRequest() *types.JSONRPCResponse {
 	r.logRequest()
 
 	switch {
 	case r.jsonReq.Method == "eth_sendRawTransaction":
-		// r.ethSendRawTxEntry.WhiteHatBundleId = r.whitehatBundleId
-		r.handle_sendRawTransaction()
-	case r.jsonReq.Method == "eth_getTransactionCount" && r.intercept_mm_eth_getTransactionCount(): // intercept if MM needs to show an error to user
-	case r.jsonReq.Method == "eth_call" && r.intercept_eth_call_to_FlashRPC_Contract(): // intercept if Flashbots isRPC contract
+		// r.ethSendRawTxEntry.WhiteHatBundleID = r.whitehatBundleID
+		r.handleSendRawTransaction()
+	case r.jsonReq.Method == "eth_getTransactionCount" && r.interceptMmEthGetTransactionCount(): // intercept if MM needs to show an error to user
+	case r.jsonReq.Method == "eth_call" && r.interceptEthCallToFlashRPCContract(): // intercept if Flashbots isRPC contract
 	case r.jsonReq.Method == "net_version":
-		r.writeRpcResult(json.RawMessage(r.chainID))
+		r.writeRPCResult(json.RawMessage(r.chainID))
 	case r.isWhitehatBundleCollection && r.jsonReq.Method == "eth_getBalance":
-		r.writeRpcResult("0x56bc75e2d63100000") // 100 ETH, same as the eth_call SC call above returns
+		r.writeRPCResult("0x56bc75e2d63100000") // 100 ETH, same as the eth_call SC call above returns
 	default:
 		if r.isWhitehatBundleCollection && r.jsonReq.Method == "eth_call" {
 			r.WhitehatBalanceCheckerRewrite()
 		}
 		// Proxy the request to a node
-		readJsonRpcSuccess := r.proxyRequestRead()
-		if !readJsonRpcSuccess {
+		readJSONRPCSuccess := r.proxyRequestRead()
+		if !readJSONRPCSuccess {
 			r.logger.Info("[ProcessRequest] Proxy to node failed", zap.String("method", r.jsonReq.Method))
-			r.writeRpcError("internal server error", types.JsonRpcInternalError)
+			r.writeRPCError("internal server error", types.JSONRPCInternalError)
 			return r.jsonRes
 		}
 
@@ -121,7 +121,7 @@ func (r *RpcRequest) ProcessRequest() *types.JsonRpcResponse {
 }
 
 // Proxies the incoming request to the target URL, and tries to parse JSON-RPC response (and check for specific)
-func (r *RpcRequest) proxyRequestRead() (readJsonRpsResponseSuccess bool) {
+func (r *RPCRequest) proxyRequestRead() (readJSONRpsResponseSuccess bool) {
 	timeProxyStart := Now() // for measuring execution time
 	body, err := json.Marshal(r.jsonReq)
 	if err != nil {
@@ -153,17 +153,17 @@ func (r *RpcRequest) proxyRequestRead() (readJsonRpsResponseSuccess bool) {
 	}
 
 	// Unmarshall JSON-RPC response and check for error inside
-	jsonRpcResp := new(types.JsonRpcResponse)
-	if err = json.Unmarshal(proxyRespBody, jsonRpcResp); err != nil {
+	jsonRPCResp := new(types.JSONRPCResponse)
+	if err = json.Unmarshal(proxyRespBody, jsonRPCResp); err != nil {
 		r.logger.Error("[proxyRequestRead] Failed decoding proxy json-rpc response", zap.Error(err))
 		return false
 	}
-	r.jsonRes = jsonRpcResp
+	r.jsonRes = jsonRPCResp
 	return true
 }
 
 // Check whether to block resending this tx. Send only if (a) not sent before, (b) sent and status=failed, (c) sent, status=unknown and sent at least 5 min ago
-func (r *RpcRequest) blockResendingTxToRelay(txHash string) bool {
+func (r *RPCRequest) blockResendingTxToRelay(txHash string) bool {
 	timeSent, txWasSentToRelay, err := RState.GetTxSentToRelay(txHash)
 	if err != nil {
 		r.logger.Error("[blockResendingTxToRelay] Redis:GetTxSentToRelay error", zap.Error(err))
@@ -175,14 +175,14 @@ func (r *RpcRequest) blockResendingTxToRelay(txHash string) bool {
 	}
 
 	// was sent before. check status and time
-	txStatusApiResponse, err := GetTxStatus(txHash)
+	txStatusAPIResponse, err := GetTxStatus(txHash)
 	if err != nil {
 		r.logger.Error("[blockResendingTxToRelay] GetTxStatus error", zap.Error(err))
 		return false // don't block on redis error
 	}
 
 	// Allow sending to relay if tx has failed, or if it's still unknown after a while
-	txStatus := txStatusApiResponse.Status
+	txStatus := txStatusAPIResponse.Status
 	if txStatus == types.TxStatusFailed {
 		return false // don't block if tx failed
 	} else if txStatus == types.TxStatusUnknown && time.Since(timeSent).Minutes() >= 5 {
@@ -194,14 +194,14 @@ func (r *RpcRequest) blockResendingTxToRelay(txHash string) bool {
 }
 
 // Send tx to relay and finish request (write response)
-func (r *RpcRequest) sendTxToRelay() {
+func (r *RPCRequest) sendTxToRelay() {
 	txHash := strings.ToLower(r.tx.Hash().Hex())
 	// Check if tx was already forwarded and should be blocked now
 	IsBlocked := r.blockResendingTxToRelay(txHash)
 	if IsBlocked {
 		r.ethSendRawTxEntry.IsBlocked = IsBlocked
 		r.logger.Info("[sendTxToRelay] Blocked", zap.String("tx", txHash))
-		r.writeRpcResult(txHash)
+		r.writeRPCResult(txHash)
 		return
 	}
 
@@ -220,7 +220,7 @@ func (r *RpcRequest) sendTxToRelay() {
 	} else {
 		if r.tx.Nonce() < minNonce || r.tx.Nonce() > maxNonce+1 {
 			r.logger.Info("[sendTxToRelay] invalid nonce", zap.String("tx", txHash), zap.String("txFrom", r.txFrom), zap.Uint64("minNonce", minNonce), zap.Uint64("maxNonce", maxNonce+1), zap.Uint64("txNonce", r.tx.Nonce()))
-			r.writeRpcError("invalid nonce", types.JsonRpcInternalError)
+			r.writeRPCError("invalid nonce", types.JSONRPCInternalError)
 			return
 		}
 	}
@@ -232,11 +232,11 @@ func (r *RpcRequest) sendTxToRelay() {
 	if r.tx.Size() > 131072 {
 		if r.tx.To() == nil {
 			r.logger.Error("[sendTxToRelay] large tx not allowed to target null", zap.String("tx", txHash))
-			r.writeRpcError("invalid target for large tx", types.JsonRpcInternalError)
+			r.writeRPCError("invalid target for large tx", types.JSONRPCInternalError)
 			return
 		} else if _, found := allowedLargeTxTargets[strings.ToLower(r.tx.To().Hex())]; !found {
 			r.logger.Error("[sendTxToRelay] large tx not allowed to target", zap.String("tx", txHash), zap.String("target", r.tx.To().Hex()))
-			r.writeRpcError("invalid target for large tx", types.JsonRpcInternalError)
+			r.writeRPCError("invalid target for large tx", types.JSONRPCInternalError)
 			return
 		}
 		r.logger.Info("sendTxToRelay] allowed large tx", zap.String("tx", txHash), zap.String("target", r.tx.To().Hex()))
@@ -255,7 +255,7 @@ func (r *RpcRequest) sendTxToRelay() {
 
 	if DebugDontSendTx {
 		r.logger.Info("[sendTxToRelay] Faked sending tx to relay, did nothing", zap.String("tx", txHash))
-		r.writeRpcResult(txHash)
+		r.writeRPCResult(txHash)
 		return
 	}
 
@@ -267,7 +267,7 @@ func (r *RpcRequest) sendTxToRelay() {
 			addr, err := GetSenderAddressFromTx(r.tx)
 			if err != nil {
 				r.logger.Error("[sendTxToRelay] GetSenderAddressFromTx failed", zap.Error(err))
-				r.writeRpcError(err.Error(), types.JsonRpcInternalError)
+				r.writeRPCError(err.Error(), types.JSONRPCInternalError)
 				return
 			}
 			sendPrivateTxArgs.Preferences.Validity.Refund = []types.RefundConfig{
@@ -290,7 +290,7 @@ func (r *RpcRequest) sendTxToRelay() {
 	}
 
 	// Sending transactions to preconf-share node
-	rpcClient := jsonrpc.NewClient(r.relayUrl)
+	rpcClient := jsonrpc.NewClient(r.relayURL)
 
 	txBytes := common.FromHex(r.rawTxHex)
 
@@ -312,16 +312,16 @@ func (r *RpcRequest) sendTxToRelay() {
 	err = rpcClient.CallFor(context.Background(), &result, "preconf_sendRequest", []*preconshare.SendRequestArgs{&request})
 	if err != nil {
 		r.logger.Error("[sendTxToRelay] Relay call failed", zap.Error(err))
-		r.writeRpcError(err.Error(), types.JsonRpcInternalError)
+		r.writeRPCError(err.Error(), types.JSONRPCInternalError)
 		return
 	}
 
-	r.writeRpcResult(txHash)
+	r.writeRPCResult(txHash)
 	r.logger.Info("[sendTxToRelay] Sent and received preconfirmation", zap.String("tx", txHash), zap.Uint64("block", uint64(result.Block)))
 }
 
 // Sends cancel-tx to relay as cancelPrivateTransaction, if initial tx was sent there too.
-func (r *RpcRequest) handleCancelTx() (requestCompleted bool) {
+func (r *RPCRequest) handleCancelTx() (requestCompleted bool) {
 	cancelTxHash := strings.ToLower(r.tx.Hash().Hex())
 	txFromLower := strings.ToLower(r.txFrom)
 	r.logger.Info("[cancel-tx] cancelling transaction", zap.String("cancelTxHash", cancelTxHash), zap.String("txFromLower", txFromLower), zap.Uint64("txNonce", r.tx.Nonce()))
@@ -330,7 +330,7 @@ func (r *RpcRequest) handleCancelTx() (requestCompleted bool) {
 	initialTxHash, txHashFound, err := RState.GetTxHashForSenderAndNonce(txFromLower, r.tx.Nonce())
 	if err != nil {
 		r.logger.Error("[cancelTx] Redis:GetTxHashForSenderAndNonce failed", zap.Error(err))
-		r.writeRpcError("internal server error", types.JsonRpcInternalError)
+		r.writeRPCError("internal server error", types.JSONRPCInternalError)
 		return true
 	}
 
@@ -342,7 +342,7 @@ func (r *RpcRequest) handleCancelTx() (requestCompleted bool) {
 	_, txWasSentToRelay, err := RState.GetTxSentToRelay(initialTxHash)
 	if err != nil {
 		r.logger.Error("[cancelTx] Redis:GetTxSentToRelay failed", zap.Error(err))
-		r.writeRpcError("internal server error", types.JsonRpcInternalError)
+		r.writeRPCError("internal server error", types.JSONRPCInternalError)
 		return true
 	}
 
@@ -354,12 +354,12 @@ func (r *RpcRequest) handleCancelTx() (requestCompleted bool) {
 	_, cancelTxAlreadySentToRelay, err := RState.GetTxSentToRelay(cancelTxHash)
 	if err != nil {
 		r.logger.Error("[cancelTx] Redis:GetTxSentToRelay error", zap.Error(err))
-		r.writeRpcError("internal server error", types.JsonRpcInternalError)
+		r.writeRPCError("internal server error", types.JSONRPCInternalError)
 		return true
 	}
 
 	if cancelTxAlreadySentToRelay { // already sent
-		r.writeRpcResult(cancelTxHash)
+		r.writeRPCResult(cancelTxHash)
 		return true
 	}
 
@@ -372,33 +372,33 @@ func (r *RpcRequest) handleCancelTx() (requestCompleted bool) {
 
 	if DebugDontSendTx {
 		r.logger.Info("[cancelTx] Faked sending cancel-tx to relay, did nothing", zap.String("tx", initialTxHash))
-		r.writeRpcResult(initialTxHash)
+		r.writeRPCResult(initialTxHash)
 		return true
 	}
 
 	cancelPrivTxArgs := flashbotsrpc.FlashbotsCancelPrivateTransactionRequest{TxHash: initialTxHash}
 
-	fbRpc := flashbotsrpc.New(r.relayUrl)
+	fbRpc := flashbotsrpc.New(r.relayURL)
 	_, err = fbRpc.FlashbotsCancelPrivateTransaction(r.relaySigningKey, cancelPrivTxArgs)
 	if err != nil {
 		if errors.Is(err, flashbotsrpc.ErrRelayErrorResponse) {
 			// errors could be: 'tx not found', 'tx was already cancelled', 'tx has already expired'
 			r.logger.Info("[cancelTx] Relay error response", zap.Error(err), zap.String("rawTx", r.rawTxHex))
-			r.writeRpcError(err.Error(), types.JsonRpcInternalError)
+			r.writeRPCError(err.Error(), types.JSONRPCInternalError)
 		} else {
 			r.logger.Error("[cancelTx] Relay call failed", zap.Error(err), zap.String("rawTx", r.rawTxHex))
-			r.writeRpcError("internal server error", types.JsonRpcInternalError)
+			r.writeRPCError("internal server error", types.JSONRPCInternalError)
 		}
 		return true
 	}
 
-	r.writeRpcResult(cancelTxHash)
+	r.writeRPCResult(cancelTxHash)
 	return true
 }
 
-func (r *RpcRequest) GetAddressNonceRange(address string) (minNonce, maxNonce uint64, err error) {
+func (r *RPCRequest) GetAddressNonceRange(address string) (minNonce, maxNonce uint64, err error) {
 	// Get minimum nonce by asking the eth node for the current transaction count
-	_req := types.NewJsonRpcRequest(1, "eth_getTransactionCount", []interface{}{r.txFrom, "latest"})
+	_req := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{r.txFrom, "latest"})
 	jsonData, err := json.Marshal(_req)
 	if err != nil {
 		r.logger.Error("[GetAddressNonceRange] eth_getTransactionCount marshal failed", zap.Error(err))
@@ -416,7 +416,7 @@ func (r *RpcRequest) GetAddressNonceRange(address string) (minNonce, maxNonce ui
 		r.logger.Error("[GetAddressNonceRange] eth_getTransactionCount read response failed", zap.Error(err))
 		return 0, 0, err
 	}
-	_res, err := respBytesToJsonRPCResponse(resBytes)
+	_res, err := respBytesToJSONRPCResponse(resBytes)
 	if err != nil {
 		r.logger.Error("[GetAddressNonceRange] eth_getTransactionCount parsing response failed", zap.Error(err))
 		return 0, 0, err
@@ -425,7 +425,7 @@ func (r *RpcRequest) GetAddressNonceRange(address string) (minNonce, maxNonce ui
 	err = json.Unmarshal(_res.Result, &_userNonceStr)
 	if err != nil {
 		r.logger.Error("[GetAddressNonceRange] eth_getTransactionCount unmarshall failed", zap.Error(err))
-		r.writeRpcError("internal server error", types.JsonRpcInternalError)
+		r.writeRPCError("internal server error", types.JSONRPCInternalError)
 		return
 	}
 	_userNonceStr = strings.Replace(_userNonceStr, "0x", "", 1)
@@ -439,7 +439,7 @@ func (r *RpcRequest) GetAddressNonceRange(address string) (minNonce, maxNonce ui
 	return minNonce, maxNonce, nil
 }
 
-func (r *RpcRequest) WhitehatBalanceCheckerRewrite() {
+func (r *RPCRequest) WhitehatBalanceCheckerRewrite() {
 	var err error
 
 	if len(r.jsonReq.Params) == 0 {
@@ -463,13 +463,13 @@ func (r *RpcRequest) WhitehatBalanceCheckerRewrite() {
 	}
 }
 
-func (r *RpcRequest) writeRpcError(msg string, errCode int) {
+func (r *RPCRequest) writeRPCError(msg string, errCode int) {
 	if r.jsonReq.Method == "eth_sendRawTransaction" {
 		r.ethSendRawTxEntry.Error = msg
 		r.ethSendRawTxEntry.ErrorCode = errCode
 	}
-	r.jsonRes = &types.JsonRpcResponse{
-		Id:      r.jsonReq.Id,
+	r.jsonRes = &types.JSONRPCResponse{
+		ID:      r.jsonReq.ID,
 		Version: "2.0",
 		Error: &types.JSONRPCError{
 			Code:    errCode,
@@ -478,15 +478,15 @@ func (r *RpcRequest) writeRpcError(msg string, errCode int) {
 	}
 }
 
-func (r *RpcRequest) writeRpcResult(result interface{}) {
+func (r *RPCRequest) writeRPCResult(result interface{}) {
 	resBytes, err := json.Marshal(result)
 	if err != nil {
-		r.logger.Error("[writeRpcResult] writeRpcResult error marshalling", zap.Error(err))
-		r.writeRpcError("internal server error", types.JsonRpcInternalError)
+		r.logger.Error("[writeRPCResult] writeRPCResult error marshalling", zap.Error(err))
+		r.writeRPCError("internal server error", types.JSONRPCInternalError)
 		return
 	}
-	r.jsonRes = &types.JsonRpcResponse{
-		Id:      r.jsonReq.Id,
+	r.jsonRes = &types.JSONRPCResponse{
+		ID:      r.jsonReq.ID,
 		Version: "2.0",
 		Result:  resBytes,
 	}

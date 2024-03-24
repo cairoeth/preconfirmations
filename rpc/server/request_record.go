@@ -24,8 +24,8 @@ func NewRequestRecord(db database.Store) *requestRecord {
 
 func (r *requestRecord) AddEthSendRawTxEntry(id uuid.UUID) *database.EthSendRawTxEntry {
 	entry := &database.EthSendRawTxEntry{
-		Id:        id,
-		RequestId: r.requestEntry.Id,
+		ID:        id,
+		RequestId: r.requestEntry.ID,
 	}
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
@@ -34,11 +34,11 @@ func (r *requestRecord) AddEthSendRawTxEntry(id uuid.UUID) *database.EthSendRawT
 }
 
 func (r *requestRecord) UpdateRequestEntry(req *http.Request, reqStatus int, error string) {
-	r.requestEntry.HttpMethod = req.Method
+	r.requestEntry.HTTPMethod = req.Method
 	r.requestEntry.Error = error
-	r.requestEntry.HttpUrl = req.URL.Path
-	r.requestEntry.HttpQueryParam = req.URL.RawQuery
-	r.requestEntry.HttpResponseStatus = reqStatus
+	r.requestEntry.HTTPURL = req.URL.Path
+	r.requestEntry.HTTPQueryParam = req.URL.RawQuery
+	r.requestEntry.HTTPResponseStatus = reqStatus
 	r.requestEntry.Origin = req.Header.Get("Origin")
 	r.requestEntry.Host = req.Header.Get("Host")
 }

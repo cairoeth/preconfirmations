@@ -76,9 +76,9 @@ func GetSenderFromRawTx(tx *ethtypes.Transaction) (string, error) {
 	return from, nil
 }
 
-func GetTxStatus(txHash string) (*types.PrivateTxApiResponse, error) {
-	privTxApiUrl := fmt.Sprintf("%s/tx/%s", ProtectTxApiHost, txHash)
-	resp, err := http.Get(privTxApiUrl)
+func GetTxStatus(txHash string) (*types.PrivateTxAPIResponse, error) {
+	privTxAPIURL := fmt.Sprintf("%s/tx/%s", ProtectTxAPIHost, txHash)
+	resp, err := http.Get(privTxAPIURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "privTxApi call failed for "+txHash)
 	}
@@ -89,7 +89,7 @@ func GetTxStatus(txHash string) (*types.PrivateTxApiResponse, error) {
 		return nil, errors.Wrap(err, "privTxApi body-read failed for "+txHash)
 	}
 
-	respObj := new(types.PrivateTxApiResponse)
+	respObj := new(types.PrivateTxAPIResponse)
 	err = json.Unmarshal(bodyBytes, respObj)
 	if err != nil {
 		msg := fmt.Sprintf("privTxApi jsonUnmarshal failed for %s - status: %d / body: %s", txHash, resp.StatusCode, string(bodyBytes))
@@ -125,23 +125,23 @@ func IsMetamaskMoz(r *http.Request) bool {
 	return r.Header.Get("Origin") == "moz-extension://57f9aaf6-270a-154f-9a8a-632d0db4128c"
 }
 
-func respBytesToJsonRPCResponse(respBytes []byte) (*types.JsonRpcResponse, error) {
-	jsonRpcResp := new(types.JsonRpcResponse)
+func respBytesToJSONRPCResponse(respBytes []byte) (*types.JSONRPCResponse, error) {
+	jsonRPCResp := new(types.JSONRPCResponse)
 
 	// Check if returned an error, if so then convert to standard JSON-RPC error
 	errorResp := new(types.RelayErrorResponse)
 	if err := json.Unmarshal(respBytes, errorResp); err == nil && errorResp.Error != "" {
 		// relay returned an error, convert to standard JSON-RPC error now
-		jsonRpcResp.Error = &types.JSONRPCError{Message: errorResp.Error}
-		return jsonRpcResp, nil
+		jsonRPCResp.Error = &types.JSONRPCError{Message: errorResp.Error}
+		return jsonRPCResp, nil
 	}
 
 	// Unmarshall JSON-RPC response and check for error inside
-	if err := json.Unmarshal(respBytes, jsonRpcResp); err != nil {
+	if err := json.Unmarshal(respBytes, jsonRPCResp); err != nil {
 		return nil, errors.Wrap(err, "unmarshal")
 	}
 
-	return jsonRpcResp, nil
+	return jsonRPCResp, nil
 }
 
 func BigIntPtrToStr(i *big.Int) string {

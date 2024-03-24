@@ -72,7 +72,7 @@ func Test_requestRecord_SaveRecord(t *testing.T) {
 	}{
 		"Should successfully store batch request": {
 			id:           id1,
-			requestEntry: database.RequestEntry{Id: id1},
+			requestEntry: database.RequestEntry{ID: id1},
 			ethSendRawTxEntries: []*database.EthSendRawTxEntry{
 				{RequestId: id1, WasSentToMempool: true},
 				{RequestId: id1, WasSentToMempool: true},
@@ -84,19 +84,19 @@ func Test_requestRecord_SaveRecord(t *testing.T) {
 		},
 		"Should successfully store single request": {
 			id:                  id2,
-			requestEntry:        database.RequestEntry{Id: id2},
+			requestEntry:        database.RequestEntry{ID: id2},
 			ethSendRawTxEntries: []*database.EthSendRawTxEntry{{RequestId: id2, WasSentToMempool: true}},
 			rawTxEntryLen:       1,
 		},
 		"Should successfully store single request with rawTxEntry has error": {
 			id:                  id3,
-			requestEntry:        database.RequestEntry{Id: id3},
+			requestEntry:        database.RequestEntry{ID: id3},
 			ethSendRawTxEntries: []*database.EthSendRawTxEntry{{RequestId: id3, ErrorCode: -32600}},
 			rawTxEntryLen:       1,
 		},
 		"Should not store if the request doesnt meet entry condition": {
 			id:                  id4,
-			requestEntry:        database.RequestEntry{Id: id4},
+			requestEntry:        database.RequestEntry{ID: id4},
 			ethSendRawTxEntries: []*database.EthSendRawTxEntry{{RequestId: id4, IsCancelTx: true}},
 			rawTxEntryLen:       0,
 		},

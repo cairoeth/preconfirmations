@@ -15,58 +15,58 @@ import (
 	"github.com/cairoeth/preconfirmations/rpc/types"
 )
 
-var RpcEndpointUrl string // set by tests
+var RPCEndpointURL string // set by tests
 
-func SendRpcAndParseResponse(req *types.JsonRpcRequest) (*types.JsonRpcResponse, error) {
-	return SendRpcAndParseResponseTo(RpcEndpointUrl, req)
+func SendRPCAndParseResponse(req *types.JSONRPCRequest) (*types.JSONRPCResponse, error) {
+	return SendRPCAndParseResponseTo(RPCEndpointURL, req)
 }
 
-func SendBatchRpcAndParseResponse(req []*types.JsonRpcRequest) ([]*types.JsonRpcResponse, error) {
-	return SendBatchRpcAndParseResponseTo(RpcEndpointUrl, req)
+func SendBatchRPCAndParseResponse(req []*types.JSONRPCRequest) ([]*types.JSONRPCResponse, error) {
+	return SendBatchRPCAndParseResponseTo(RPCEndpointURL, req)
 }
 
-func SendRpcWithFastPreferenceAndParseResponse(t *testing.T, req *types.JsonRpcRequest) *types.JsonRpcResponse {
-	url := RpcEndpointUrl + "/fast/"
-	res, err := SendRpcAndParseResponseTo(url, req)
+func SendRPCWithFastPreferenceAndParseResponse(t *testing.T, req *types.JSONRPCRequest) *types.JSONRPCResponse {
+	url := RPCEndpointURL + "/fast/"
+	res, err := SendRPCAndParseResponseTo(url, req)
 	if err != nil {
 		t.Fatal("sendRpcAndParseResponse error:", err)
 	}
 	return res
 }
 
-func SendRpcWithAuctionPreferenceAndParseResponse(t *testing.T, req *types.JsonRpcRequest, urlSuffix string) *types.JsonRpcResponse {
-	url := RpcEndpointUrl + urlSuffix
-	res, err := SendRpcAndParseResponseTo(url, req)
+func SendRPCWithAuctionPreferenceAndParseResponse(t *testing.T, req *types.JSONRPCRequest, urlSuffix string) *types.JSONRPCResponse {
+	url := RPCEndpointURL + urlSuffix
+	res, err := SendRPCAndParseResponseTo(url, req)
 	if err != nil {
 		t.Fatal("sendRpcAndParseResponse error:", err)
 	}
 	return res
 }
 
-func SendRpcAndParseResponseOrFailNow(t *testing.T, req *types.JsonRpcRequest) *types.JsonRpcResponse {
-	res, err := SendRpcAndParseResponse(req)
+func SendRPCAndParseResponseOrFailNow(t *testing.T, req *types.JSONRPCRequest) *types.JSONRPCResponse {
+	res, err := SendRPCAndParseResponse(req)
 	if err != nil {
 		t.Fatal("sendRpcAndParseResponse error:", err)
 	}
 	return res
 }
 
-func SendRpcAndParseResponseOrFailNowString(t *testing.T, req *types.JsonRpcRequest) string {
+func SendRPCAndParseResponseOrFailNowString(t *testing.T, req *types.JSONRPCRequest) string {
 	var rpcResult string
-	resp := SendRpcAndParseResponseOrFailNow(t, req)
+	resp := SendRPCAndParseResponseOrFailNow(t, req)
 	json.Unmarshal(resp.Result, &rpcResult)
 	return rpcResult
 }
 
-func SendRpcAndParseResponseOrFailNowAllowRpcError(t *testing.T, req *types.JsonRpcRequest) *types.JsonRpcResponse {
-	res, err := SendRpcAndParseResponse(req)
+func SendRPCAndParseResponseOrFailNowAllowRPCError(t *testing.T, req *types.JSONRPCRequest) *types.JSONRPCResponse {
+	res, err := SendRPCAndParseResponse(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return res
 }
 
-func SendRpcAndParseResponseTo(url string, req *types.JsonRpcRequest) (*types.JsonRpcResponse, error) {
+func SendRPCAndParseResponseTo(url string, req *types.JSONRPCRequest) (*types.JSONRPCResponse, error) {
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal")
@@ -83,25 +83,25 @@ func SendRpcAndParseResponseTo(url string, req *types.JsonRpcRequest) (*types.Js
 		return nil, errors.Wrap(err, "read")
 	}
 
-	jsonRpcResp := new(types.JsonRpcResponse)
+	jsonRPCResp := new(types.JSONRPCResponse)
 
 	// Check if returned an error, if so then convert to standard JSON-RPC error
 	errorResp := new(types.RelayErrorResponse)
 	if err := json.Unmarshal(respData, errorResp); err == nil && errorResp.Error != "" {
 		// relay returned an error, convert to standard JSON-RPC error now
-		jsonRpcResp.Error = &types.JSONRPCError{Message: errorResp.Error}
-		return jsonRpcResp, nil
+		jsonRPCResp.Error = &types.JSONRPCError{Message: errorResp.Error}
+		return jsonRPCResp, nil
 	}
 
 	// Unmarshall JSON-RPC response and check for error inside
-	if err := json.Unmarshal(respData, jsonRpcResp); err != nil {
+	if err := json.Unmarshal(respData, jsonRPCResp); err != nil {
 		return nil, errors.Wrap(err, "unmarshal")
 	}
 
-	return jsonRpcResp, nil
+	return jsonRPCResp, nil
 }
 
-func SendBatchRpcAndParseResponseTo(url string, req []*types.JsonRpcRequest) ([]*types.JsonRpcResponse, error) {
+func SendBatchRPCAndParseResponseTo(url string, req []*types.JSONRPCRequest) ([]*types.JSONRPCResponse, error) {
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshal")
@@ -118,12 +118,12 @@ func SendBatchRpcAndParseResponseTo(url string, req []*types.JsonRpcRequest) ([]
 		return nil, errors.Wrap(err, "read")
 	}
 
-	var jsonRpcResp []*types.JsonRpcResponse
+	var jsonRPCResp []*types.JSONRPCResponse
 
 	// Unmarshall JSON-RPC response and check for error inside
-	if err := json.Unmarshal(respData, &jsonRpcResp); err != nil {
+	if err := json.Unmarshal(respData, &jsonRPCResp); err != nil {
 		return nil, errors.Wrap(err, "unmarshal")
 	}
 
-	return jsonRpcResp, nil
+	return jsonRPCResp, nil
 }

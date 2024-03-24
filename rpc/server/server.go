@@ -35,7 +35,7 @@ var RState *RedisState
 type BuilderNameProvider interface {
 	BuilderNames() []string
 }
-type RpcEndPointServer struct {
+type RPCEndPointServer struct {
 	server *http.Server
 	drain  *http.Server
 
@@ -49,30 +49,30 @@ type RpcEndPointServer struct {
 	proxyTimeoutSeconds int
 	proxyURL            string
 	relaySigningKey     *ecdsa.PrivateKey
-	relayUrl            string
+	relayURL            string
 	startTime           time.Time
 	version             string
 	builderNameProvider BuilderNameProvider
 	chainID             []byte
 }
 
-func NewRpcEndPointServer(cfg Configuration) (*RpcEndPointServer, error) {
+func NewRPCEndPointServer(cfg Configuration) (*RPCEndPointServer, error) {
 	var err error
 	if DebugDontSendTx {
-		cfg.Logger.Info("DEBUG MODE: raw transactions will not be sent out!", zap.String("redisUrl", cfg.RedisUrl))
+		cfg.Logger.Info("DEBUG MODE: raw transactions will not be sent out!", zap.String("redisURL", cfg.RedisURL))
 	}
 
-	if cfg.RedisUrl == "dev" {
-		cfg.Logger.Info("Using integrated in-memory Redis instance", zap.String("redisUrl", cfg.RedisUrl))
+	if cfg.RedisURL == "dev" {
+		cfg.Logger.Info("Using integrated in-memory Redis instance", zap.String("redisURL", cfg.RedisURL))
 		redisServer, err := miniredis.Run()
 		if err != nil {
 			return nil, err
 		}
-		cfg.RedisUrl = redisServer.Addr()
+		cfg.RedisURL = redisServer.Addr()
 	}
 	// Setup redis connection
-	cfg.Logger.Info("Connecting to redis...", zap.String("redisUrl", cfg.RedisUrl))
-	RState, err = NewRedisState(cfg.RedisUrl)
+	cfg.Logger.Info("Connecting to redis...", zap.String("redisURL", cfg.RedisURL))
+	RState, err = NewRedisState(cfg.RedisURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "Redis init error")
 	}
@@ -90,7 +90,7 @@ func NewRpcEndPointServer(cfg Configuration) (*RpcEndPointServer, error) {
 		return nil, errors.Wrap(err, "fetchNetworkIDBytes error")
 	}
 
-	return &RpcEndPointServer{
+	return &RPCEndPointServer{
 		db:                  cfg.DB,
 		drainAddress:        cfg.DrainAddress,
 		drainSeconds:        cfg.DrainSeconds,
@@ -98,9 +98,9 @@ func NewRpcEndPointServer(cfg Configuration) (*RpcEndPointServer, error) {
 		listenAddress:       cfg.ListenAddress,
 		logger:              cfg.Logger,
 		proxyTimeoutSeconds: cfg.ProxyTimeoutSeconds,
-		proxyURL:            cfg.ProxyUrl,
+		proxyURL:            cfg.ProxyURL,
 		relaySigningKey:     cfg.RelaySigningKey,
-		relayUrl:            cfg.RelayUrl,
+		relayURL:            cfg.RelayUrl,
 		startTime:           Now(),
 		version:             cfg.Version,
 		chainID:             bts,
@@ -109,9 +109,9 @@ func NewRpcEndPointServer(cfg Configuration) (*RpcEndPointServer, error) {
 }
 
 func fetchNetworkIDBytes(cfg Configuration) ([]byte, error) {
-	cl := NewRPCProxyClient(cfg.Logger, cfg.ProxyUrl, cfg.ProxyTimeoutSeconds)
+	cl := NewRPCProxyClient(cfg.Logger, cfg.ProxyURL, cfg.ProxyTimeoutSeconds)
 
-	_req := types.NewJsonRpcRequest(1, "net_version", []interface{}{})
+	_req := types.NewJSONRPCRequest(1, "net_version", []interface{}{})
 	jsonData, err := json.Marshal(_req)
 	if err != nil {
 		return nil, errors.Wrap(err, "network version request failed")
@@ -126,7 +126,7 @@ func fetchNetworkIDBytes(cfg Configuration) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	_res, err := respBytesToJsonRPCResponse(resBytes)
+	_res, err := respBytesToJSONRPCResponse(resBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,7 @@ func fetchNetworkIDBytes(cfg Configuration) ([]byte, error) {
 	return _res.Result, nil
 }
 
-func (s *RpcEndPointServer) Start() {
+func (s *RPCEndPointServer) Start() {
 	s.logger.Info("Starting rpc endpoint...", zap.String("version", s.version), zap.String("listenAddress", s.listenAddress))
 
 	// Regularly log debug info
@@ -157,13 +157,13 @@ func (s *RpcEndPointServer) Start() {
 	s.stopMainServer()
 }
 
-func (s *RpcEndPointServer) startMainServer() {
+func (s *RPCEndPointServer) startMainServer() {
 	if s.server != nil {
 		panic("http server is already running")
 	}
 	// Handler for root URL (JSON-RPC on POST, public/index.html on GET)
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", s.HandleHttpRequest)
+	mux.HandleFunc("/", s.HandleHTTPRequest)
 	mux.HandleFunc("/health", s.handleHealthRequest)
 	mux.HandleFunc("/bundle", s.HandleBundleRequest)
 	s.server = &http.Server{
@@ -179,7 +179,7 @@ func (s *RpcEndPointServer) startMainServer() {
 	}()
 }
 
-func (s *RpcEndPointServer) stopMainServer() {
+func (s *RPCEndPointServer) stopMainServer() {
 	if s.server != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -191,7 +191,7 @@ func (s *RpcEndPointServer) stopMainServer() {
 	}
 }
 
-func (s *RpcEndPointServer) startDrainServer() {
+func (s *RPCEndPointServer) startDrainServer() {
 	if s.drain != nil {
 		panic("drain http server is already running")
 	}
@@ -208,7 +208,7 @@ func (s *RpcEndPointServer) startDrainServer() {
 	}()
 }
 
-func (s *RpcEndPointServer) stopDrainServer() {
+func (s *RPCEndPointServer) stopDrainServer() {
 	if s.drain != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
@@ -220,7 +220,7 @@ func (s *RpcEndPointServer) stopDrainServer() {
 	}
 }
 
-func (s *RpcEndPointServer) HandleHttpRequest(respw http.ResponseWriter, req *http.Request) {
+func (s *RPCEndPointServer) HandleHTTPRequest(respw http.ResponseWriter, req *http.Request) {
 	setCorsHeaders(respw)
 
 	if req.Method == http.MethodGet {
@@ -237,11 +237,11 @@ func (s *RpcEndPointServer) HandleHttpRequest(respw http.ResponseWriter, req *ht
 		return
 	}
 
-	request := NewRpcRequestHandler(s.logger, &respw, req, s.proxyURL, s.proxyTimeoutSeconds, s.relaySigningKey, s.relayUrl, s.db, s.builderNameProvider.BuilderNames(), s.chainID)
+	request := NewRPCRequestHandler(s.logger, &respw, req, s.proxyURL, s.proxyTimeoutSeconds, s.relaySigningKey, s.relayURL, s.db, s.builderNameProvider.BuilderNames(), s.chainID)
 	request.process()
 }
 
-func (s *RpcEndPointServer) handleDrain(respw http.ResponseWriter, req *http.Request) {
+func (s *RPCEndPointServer) handleDrain(respw http.ResponseWriter, req *http.Request) {
 	s.isHealthyMx.Lock()
 	if !s.isHealthy {
 		s.isHealthyMx.Unlock()
@@ -260,7 +260,7 @@ func (s *RpcEndPointServer) handleDrain(respw http.ResponseWriter, req *http.Req
 	)
 }
 
-func (s *RpcEndPointServer) handleHealthRequest(respw http.ResponseWriter, req *http.Request) {
+func (s *RPCEndPointServer) handleHealthRequest(respw http.ResponseWriter, req *http.Request) {
 	s.isHealthyMx.RLock()
 	defer s.isHealthyMx.RUnlock()
 	res := types.HealthResponse{
@@ -285,24 +285,24 @@ func (s *RpcEndPointServer) handleHealthRequest(respw http.ResponseWriter, req *
 	respw.Write(jsonResp)
 }
 
-func (s *RpcEndPointServer) HandleBundleRequest(respw http.ResponseWriter, req *http.Request) {
+func (s *RPCEndPointServer) HandleBundleRequest(respw http.ResponseWriter, req *http.Request) {
 	setCorsHeaders(respw)
-	bundleId := req.URL.Query().Get("id")
-	if bundleId == "" {
+	bundleID := req.URL.Query().Get("id")
+	if bundleID == "" {
 		http.Error(respw, "no bundle id", http.StatusBadRequest)
 		return
 	}
 
 	if req.Method == http.MethodGet {
-		txs, err := RState.GetWhitehatBundleTx(bundleId)
+		txs, err := RState.GetWhitehatBundleTx(bundleID)
 		if err != nil {
-			s.logger.Info("[handleBundleRequest] GetWhitehatBundleTx failed", zap.String("bundleId", bundleId), zap.Error(err))
+			s.logger.Info("[handleBundleRequest] GetWhitehatBundleTx failed", zap.String("bundleID", bundleID), zap.Error(err))
 			respw.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		res := types.BundleResponse{
-			BundleId: bundleId,
+			BundleID: bundleID,
 			RawTxs:   txs,
 		}
 
@@ -317,7 +317,7 @@ func (s *RpcEndPointServer) HandleBundleRequest(respw http.ResponseWriter, req *
 		respw.Write(jsonResp)
 
 	} else if req.Method == http.MethodDelete {
-		RState.DelWhitehatBundleTx(bundleId)
+		RState.DelWhitehatBundleTx(bundleID)
 		respw.WriteHeader(http.StatusOK)
 
 	} else {

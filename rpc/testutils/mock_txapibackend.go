@@ -10,13 +10,13 @@ import (
 	"github.com/cairoeth/preconfirmations/rpc/types"
 )
 
-var MockTxApiStatusForHash map[string]types.PrivateTxStatus = make(map[string]types.PrivateTxStatus)
+var MockTxAPIStatusForHash map[string]types.PrivateTxStatus = make(map[string]types.PrivateTxStatus)
 
-func MockTxApiReset() {
-	MockTxApiStatusForHash = make(map[string]types.PrivateTxStatus)
+func MockTxAPIReset() {
+	MockTxAPIStatusForHash = make(map[string]types.PrivateTxStatus)
 }
 
-func MockTxApiHandler(w http.ResponseWriter, req *http.Request) {
+func MockTxAPIHandler(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
 	fmt.Println("TX API", req.URL)
@@ -27,9 +27,9 @@ func MockTxApiHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	txHash := req.URL.Path[4:] // by default, the first 4 characters are "/tx/"
-	resp := types.PrivateTxApiResponse{Status: types.TxStatusUnknown}
+	resp := types.PrivateTxAPIResponse{Status: types.TxStatusUnknown}
 
-	if status, found := MockTxApiStatusForHash[txHash]; found {
+	if status, found := MockTxAPIStatusForHash[txHash]; found {
 		resp.Status = status
 	}
 
