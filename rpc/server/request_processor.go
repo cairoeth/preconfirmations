@@ -1,13 +1,10 @@
-/*
-Request represents an incoming client request
-*/
+/* Package server Request represents an incoming client request */
 package server
 
 import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/json"
-	"errors"
 	"io"
 	"math/big"
 	"reflect"
@@ -22,7 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/metachris/flashbotsrpc"
 	"github.com/ybbus/jsonrpc/v3"
 	"go.uber.org/zap"
 )
@@ -111,7 +107,7 @@ func (r *RPCRequest) ProcessRequest() *types.JSONRPCResponse {
 
 		// After proxy, perhaps check backend [MM fix #3 step 2]
 		if r.jsonReq.Method == "eth_getTransactionReceipt" {
-			requestCompleted := r.check_post_getTransactionReceipt(r.jsonRes)
+			requestCompleted := r.checkPostGetTransactionReceipt(r.jsonRes)
 			if requestCompleted {
 				return r.jsonRes
 			}
@@ -318,82 +314,6 @@ func (r *RPCRequest) sendTxToRelay() {
 
 	r.writeRPCResult(txHash)
 	r.logger.Info("[sendTxToRelay] Sent and received preconfirmation", zap.String("tx", txHash), zap.Uint64("block", uint64(result.Block)))
-}
-
-// Sends cancel-tx to relay as cancelPrivateTransaction, if initial tx was sent there too.
-func (r *RPCRequest) handleCancelTx() (requestCompleted bool) {
-	cancelTxHash := strings.ToLower(r.tx.Hash().Hex())
-	txFromLower := strings.ToLower(r.txFrom)
-	r.logger.Info("[cancel-tx] cancelling transaction", zap.String("cancelTxHash", cancelTxHash), zap.String("txFromLower", txFromLower), zap.Uint64("txNonce", r.tx.Nonce()))
-
-	// Get initial txHash by sender+nonce
-	initialTxHash, txHashFound, err := RState.GetTxHashForSenderAndNonce(txFromLower, r.tx.Nonce())
-	if err != nil {
-		r.logger.Error("[cancelTx] Redis:GetTxHashForSenderAndNonce failed", zap.Error(err))
-		r.writeRPCError("internal server error", types.JSONRPCInternalError)
-		return true
-	}
-
-	if !txHashFound { // not found, send to mempool
-		return false
-	}
-
-	// Check if initial tx was sent to relay
-	_, txWasSentToRelay, err := RState.GetTxSentToRelay(initialTxHash)
-	if err != nil {
-		r.logger.Error("[cancelTx] Redis:GetTxSentToRelay failed", zap.Error(err))
-		r.writeRPCError("internal server error", types.JSONRPCInternalError)
-		return true
-	}
-
-	if !txWasSentToRelay { // was not sent to relay, send to mempool
-		return false
-	}
-
-	// Should send cancel-tx to relay. Check if cancel-tx was already sent before
-	_, cancelTxAlreadySentToRelay, err := RState.GetTxSentToRelay(cancelTxHash)
-	if err != nil {
-		r.logger.Error("[cancelTx] Redis:GetTxSentToRelay error", zap.Error(err))
-		r.writeRPCError("internal server error", types.JSONRPCInternalError)
-		return true
-	}
-
-	if cancelTxAlreadySentToRelay { // already sent
-		r.writeRPCResult(cancelTxHash)
-		return true
-	}
-
-	err = RState.SetTxSentToRelay(cancelTxHash)
-	if err != nil {
-		r.logger.Error("[cancelTx] Redis:SetTxSentToRelay failed", zap.Error(err))
-	}
-
-	r.logger.Info("[cancel-tx] sending to relay", zap.String("initialTxHash", initialTxHash), zap.String("txFromLower", txFromLower), zap.Uint64("txNonce", r.tx.Nonce()))
-
-	if DebugDontSendTx {
-		r.logger.Info("[cancelTx] Faked sending cancel-tx to relay, did nothing", zap.String("tx", initialTxHash))
-		r.writeRPCResult(initialTxHash)
-		return true
-	}
-
-	cancelPrivTxArgs := flashbotsrpc.FlashbotsCancelPrivateTransactionRequest{TxHash: initialTxHash}
-
-	fbRpc := flashbotsrpc.New(r.relayURL)
-	_, err = fbRpc.FlashbotsCancelPrivateTransaction(r.relaySigningKey, cancelPrivTxArgs)
-	if err != nil {
-		if errors.Is(err, flashbotsrpc.ErrRelayErrorResponse) {
-			// errors could be: 'tx not found', 'tx was already cancelled', 'tx has already expired'
-			r.logger.Info("[cancelTx] Relay error response", zap.Error(err), zap.String("rawTx", r.rawTxHex))
-			r.writeRPCError(err.Error(), types.JSONRPCInternalError)
-		} else {
-			r.logger.Error("[cancelTx] Relay call failed", zap.Error(err), zap.String("rawTx", r.rawTxHex))
-			r.writeRPCError("internal server error", types.JSONRPCInternalError)
-		}
-		return true
-	}
-
-	r.writeRPCResult(cancelTxHash)
-	return true
 }
 
 func (r *RPCRequest) GetAddressNonceRange(address string) (minNonce, maxNonce uint64, err error) {

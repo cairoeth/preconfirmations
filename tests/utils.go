@@ -1,3 +1,4 @@
+// Package tests contains the utilities for tests.
 package tests
 
 import (
@@ -8,7 +9,7 @@ import (
 	"time"
 )
 
-// Make sure to stop the anvil subprocess by calling anvilCmd.Process.Kill()
+// StartAnvilChainAndDeployContracts Make sure to stop the anvil subprocess by calling anvilCmd.Process.Kill()
 func StartAnvilChainAndDeployContracts() *exec.Cmd {
 	fmt.Println("Starting anvil...")
 	anvilCmd := exec.Command("anvil", "--fork-url", "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161")

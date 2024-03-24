@@ -8,28 +8,12 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/params"
 )
 
 var (
-	ethDivisor  = new(big.Float).SetUint64(params.Ether)
-	gweiDivisor = new(big.Float).SetUint64(params.GWei)
-
 	big1  = big.NewInt(1)
 	big10 = big.NewInt(10)
 )
-
-func formatUnits(value *big.Int, unit string) string {
-	float := new(big.Float).SetInt(value)
-	switch unit {
-	case "eth":
-		return float.Quo(float, ethDivisor).String()
-	case "gwei":
-		return float.Quo(float, gweiDivisor).String()
-	default:
-		return ""
-	}
-}
 
 type EthCachingClient struct {
 	ethClient   *ethclient.Client
@@ -117,18 +101,4 @@ func RoundUpWithPrecision(number *big.Int, precisionDigits int) *big.Int {
 	result := div.Mul(div, power)
 
 	return result
-}
-
-func newerInclusion(old, newBundle *SendRequestArgs) bool {
-	if old == nil {
-		return true
-	}
-	if newBundle == nil {
-		return false
-	}
-	if old.Inclusion.MaxBlock < newBundle.Inclusion.MaxBlock {
-		return true
-	}
-
-	return false
 }

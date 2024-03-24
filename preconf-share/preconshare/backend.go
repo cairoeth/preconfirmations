@@ -51,8 +51,7 @@ func (b *RedisHintBackend) NotifyHint(ctx context.Context, hint *Hint) error {
 }
 
 type JSONRPCBuilder struct {
-	url    string
-	client jsonrpc.RPCClient
+	url string
 }
 
 func (b *JSONRPCBuilder) String() string {

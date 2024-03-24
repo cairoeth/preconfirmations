@@ -1,4 +1,4 @@
-// Whitelist for smart contract functions that never need protection.
+// Package server Whitelist for smart contract functions that never need protection.
 package server
 
 import "strings"

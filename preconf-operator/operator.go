@@ -1,3 +1,4 @@
+// Package operator AVS operator logic.
 package operator
 
 import (
@@ -22,7 +23,6 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	sdkecdsa "github.com/Layr-Labs/eigensdk-go/crypto/ecdsa"
 	"github.com/Layr-Labs/eigensdk-go/logging"
-	sdklogging "github.com/Layr-Labs/eigensdk-go/logging"
 	sdkmetrics "github.com/Layr-Labs/eigensdk-go/metrics"
 	"github.com/Layr-Labs/eigensdk-go/metrics/collectors/economic"
 	rpccalls "github.com/Layr-Labs/eigensdk-go/metrics/collectors/rpc_calls"
@@ -36,8 +36,8 @@ import (
 )
 
 const (
-	AVS_NAME = "preconfirmations"
-	SEM_VER  = "0.0.1"
+	AvsName = "preconfirmations"
+	SemVer  = "0.0.1"
 )
 
 type Operator struct {
@@ -51,54 +51,52 @@ type Operator struct {
 	// writing to the chain should be done via the cli only
 	metricsReg       *prometheus.Registry
 	metrics          metrics.Metrics
-	nodeApi          *nodeapi.NodeApi
-	receiveApi       *receiverapi.ReceiveApi
+	nodeAPI          *nodeapi.NodeApi
+	receiveAPI       *receiverapi.ReceiveAPI
 	avsWriter        *chainio.AvsWriter
 	avsReader        chainio.AvsReaderer
 	eigenlayerReader sdkelcontracts.ELReader
 	eigenlayerWriter sdkelcontracts.ELWriter
 	blsKeypair       *bls.KeyPair
-	operatorId       bls.OperatorId
+	operatorID       bls.OperatorId
 	operatorAddr     common.Address
 	// ip address of aggregator
-	aggregatorServerIpPortAddr string
+	aggregatorServerIPPortAddr string
 	// rpc client to send signed task responses to aggregator
-	aggregatorRpcClient AggregatorRpcClienter
+	aggregatorRPCClient AggregatorRPCClienter
 	// needed when opting in to avs (allow this service manager contract to slash operator)
 	credibleSquaringServiceManagerAddr common.Address
 }
 
-// TODO(samlaf): config is a mess right now, since the chainio client constructors
-//
-//	take the config in core (which is shared with aggregator and challenger)
+// NewOperatorFromConfig the config in core (which is shared with aggregator and challenger)
 func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	var logLevel logging.LogLevel
 	if c.Production {
-		logLevel = sdklogging.Production
+		logLevel = logging.Production
 	} else {
-		logLevel = sdklogging.Development
+		logLevel = logging.Development
 	}
-	logger, err := sdklogging.NewZapLogger(logLevel)
+	logger, err := logging.NewZapLogger(logLevel)
 	if err != nil {
 		return nil, err
 	}
 	reg := prometheus.NewRegistry()
-	eigenMetrics := sdkmetrics.NewEigenMetrics(AVS_NAME, c.EigenMetricsIpPortAddress, reg, logger)
-	avsAndEigenMetrics := metrics.NewAvsAndEigenMetrics(AVS_NAME, eigenMetrics, reg)
+	eigenMetrics := sdkmetrics.NewEigenMetrics(AvsName, c.EigenMetricsIPPortAddress, reg, logger)
+	avsAndEigenMetrics := metrics.NewAvsAndEigenMetrics(AvsName, eigenMetrics, reg)
 
 	// Setup Node Api
-	nodeApi := nodeapi.NewNodeApi(AVS_NAME, SEM_VER, c.NodeApiIpPortAddress, logger)
+	nodeAPI := nodeapi.NewNodeApi(AvsName, SemVer, c.NodeAPIIPPortAddress, logger)
 
-	var ethRpcClient eth.EthClient
+	var ethRPCClient eth.EthClient
 	if c.EnableMetrics {
-		rpcCallsCollector := rpccalls.NewCollector(AVS_NAME, reg)
-		ethRpcClient, err = eth.NewInstrumentedClient(c.EthRpcUrl, rpcCallsCollector)
+		rpcCallsCollector := rpccalls.NewCollector(AvsName, reg)
+		ethRPCClient, err = eth.NewInstrumentedClient(c.EthRPCURL, rpcCallsCollector)
 		if err != nil {
 			logger.Errorf("Cannot create http ethclient", "err", err)
 			return nil, err
 		}
 	} else {
-		ethRpcClient, err = eth.NewClient(c.EthRpcUrl)
+		ethRPCClient, err = eth.NewClient(c.EthRPCURL)
 		if err != nil {
 			logger.Errorf("Cannot create http ethclient", "err", err)
 			return nil, err
@@ -106,7 +104,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	// Setup Receive Api
-	receiveApi := receiverapi.NewReceiveApi("localhost:8000", logger, ethRpcClient)
+	receiveAPI := receiverapi.NewReceiveAPI("localhost:8000", logger, ethRPCClient)
 
 	blsKeyPassword, ok := os.LookupEnv("OPERATOR_BLS_KEY_PASSWORD")
 	if !ok {
@@ -117,12 +115,12 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger.Errorf("Cannot parse bls private key", "err", err)
 		return nil, err
 	}
-	// TODO(samlaf): should we add the chainId to the config instead?
+	// TODO(samlaf): should we add the chainID to the config instead?
 	// this way we can prevent creating a signer that signs on mainnet by mistake
-	// if the config says chainId=5, then we can only create a goerli signer
-	chainId, err := ethRpcClient.ChainID(context.Background())
+	// if the config says chainID=5, then we can only create a goerli signer
+	chainID, err := ethRPCClient.ChainID(context.Background())
 	if err != nil {
-		logger.Error("Cannot get chainId", "err", err)
+		logger.Error("Cannot get chainID", "err", err)
 		return nil, err
 	}
 
@@ -134,17 +132,17 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{
 		KeystorePath: c.EcdsaPrivateKeyStorePath,
 		Password:     ecdsaKeyPassword,
-	}, chainId)
+	}, chainID)
 	if err != nil {
 		panic(err)
 	}
 	chainioConfig := clients.BuildAllConfig{
-		EthHttpUrl:                 c.EthRpcUrl,
-		EthWsUrl:                   c.EthRpcUrl,
+		EthHttpUrl:                 c.EthRPCURL,
+		EthWsUrl:                   c.EthRPCURL,
 		RegistryCoordinatorAddr:    c.AVSRegistryCoordinatorAddress,
 		OperatorStateRetrieverAddr: c.OperatorStateRetrieverAddress,
-		AvsName:                    AVS_NAME,
-		PromMetricsIpPortAddress:   c.EigenMetricsIpPortAddress,
+		AvsName:                    AvsName,
+		PromMetricsIpPortAddress:   c.EigenMetricsIPPortAddress,
 	}
 
 	sdkClients, err := clients.BuildAll(chainioConfig, common.HexToAddress(c.OperatorAddress), signerV2, logger)
@@ -152,11 +150,11 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		panic(err)
 	}
 
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, common.HexToAddress(c.OperatorAddress))
+	txMgr := txmgr.NewSimpleTxManager(ethRPCClient, logger, signerV2, common.HexToAddress(c.OperatorAddress))
 
 	avsWriter, err := chainio.BuildAvsWriter(
 		txMgr, common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		common.HexToAddress(c.OperatorStateRetrieverAddress), ethRpcClient, logger,
+		common.HexToAddress(c.OperatorStateRetrieverAddress), ethRPCClient, logger,
 	)
 	if err != nil {
 		logger.Error("Cannot create AvsWriter", "err", err)
@@ -166,7 +164,7 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	avsReader, err := chainio.BuildAvsReader(
 		common.HexToAddress(c.AVSRegistryCoordinatorAddress),
 		common.HexToAddress(c.OperatorStateRetrieverAddress),
-		ethRpcClient, logger)
+		ethRPCClient, logger)
 	if err != nil {
 		logger.Error("Cannot create AvsReader", "err", err)
 		return nil, err
@@ -179,12 +177,12 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 	economicMetricsCollector := economic.NewCollector(
 		sdkClients.ElChainReader, sdkClients.AvsRegistryChainReader,
-		AVS_NAME, logger, common.HexToAddress(c.OperatorAddress), quorumNames)
+		AvsName, logger, common.HexToAddress(c.OperatorAddress), quorumNames)
 	reg.MustRegister(economicMetricsCollector)
 
-	aggregatorRpcClient, err := NewAggregatorRpcClient(c.AggregatorServerIpPortAddress, logger, avsAndEigenMetrics)
+	aggregatorRPCClient, err := NewAggregatorRPCClient(c.AggregatorServerIPPortAddress, logger, avsAndEigenMetrics)
 	if err != nil {
-		logger.Error("Cannot create AggregatorRpcClient. Is aggregator running?", "err", err)
+		logger.Error("Cannot create AggregatorRPCClient. Is aggregator running?", "err", err)
 		return nil, err
 	}
 
@@ -193,19 +191,19 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 		logger:                             logger,
 		metricsReg:                         reg,
 		metrics:                            avsAndEigenMetrics,
-		nodeApi:                            nodeApi,
-		receiveApi:                         receiveApi,
-		ethClient:                          ethRpcClient,
+		nodeAPI:                            nodeAPI,
+		receiveAPI:                         receiveAPI,
+		ethClient:                          ethRPCClient,
 		avsWriter:                          avsWriter,
 		avsReader:                          avsReader,
 		eigenlayerReader:                   sdkClients.ElChainReader,
 		eigenlayerWriter:                   sdkClients.ElChainWriter,
 		blsKeypair:                         blsKeyPair,
 		operatorAddr:                       common.HexToAddress(c.OperatorAddress),
-		aggregatorServerIpPortAddr:         c.AggregatorServerIpPortAddress,
-		aggregatorRpcClient:                aggregatorRpcClient,
+		aggregatorServerIPPortAddr:         c.AggregatorServerIPPortAddress,
+		aggregatorRPCClient:                aggregatorRPCClient,
 		credibleSquaringServiceManagerAddr: common.HexToAddress(c.AVSRegistryCoordinatorAddress),
-		operatorId:                         [32]byte{0}, // this is set below
+		operatorID:                         [32]byte{0}, // this is set below
 
 	}
 
@@ -221,14 +219,14 @@ func NewOperatorFromConfig(c types.NodeConfig) (*Operator, error) {
 	}
 
 	// OperatorId is set in contract during registration so we get it after registering operator.
-	operatorId, err := sdkClients.AvsRegistryChainReader.GetOperatorId(&bind.CallOpts{}, operator.operatorAddr)
+	operatorID, err := sdkClients.AvsRegistryChainReader.GetOperatorId(&bind.CallOpts{}, operator.operatorAddr)
 	if err != nil {
 		logger.Error("Cannot get operator id", "err", err)
 		return nil, err
 	}
-	operator.operatorId = operatorId
+	operator.operatorID = operatorID
 	logger.Info("Operator info",
-		"operatorId", operatorId,
+		"operatorID", operatorID,
 		"operatorAddr", c.OperatorAddress,
 		"operatorG1Pubkey", operator.blsKeypair.GetPubKeyG1(),
 		"operatorG2Pubkey", operator.blsKeypair.GetPubKeyG2(),
@@ -251,11 +249,11 @@ func (o *Operator) Start(ctx context.Context) error {
 
 	o.logger.Infof("Starting operator.")
 
-	if o.config.EnableNodeApi {
-		o.nodeApi.Start()
+	if o.config.EnableNodeAPI {
+		o.nodeAPI.Start()
 	}
 
-	o.receiveApi.Start()
+	o.receiveAPI.Start()
 
 	var metricsErrChan <-chan error
 	if o.config.EnableMetrics {

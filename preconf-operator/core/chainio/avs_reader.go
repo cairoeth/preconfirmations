@@ -1,3 +1,4 @@
+// Package chainio contains the logic to interact with the AVS contracts onchain.
 package chainio
 
 import (
@@ -28,15 +29,15 @@ type AvsReader struct {
 var _ AvsReaderer = (*AvsReader)(nil)
 
 func BuildAvsReaderFromConfig(c *config.Config) (*AvsReader, error) {
-	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
+	return BuildAvsReader(c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHTTPClient, c.Logger)
 }
 
-func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHttpClient eth.EthClient, logger logging.Logger) (*AvsReader, error) {
-	avsManagersBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+func BuildAvsReader(registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHTTPClient eth.EthClient, logger logging.Logger) (*AvsReader, error) {
+	avsManagersBindings, err := NewAvsManagersBindings(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHTTPClient, logger)
 	if err != nil {
 		return nil, err
 	}
-	avsRegistryReader, err := sdkavsregistry.BuildAvsRegistryChainReader(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHttpClient, logger)
+	avsRegistryReader, err := sdkavsregistry.BuildAvsRegistryChainReader(registryCoordinatorAddr, operatorStateRetrieverAddr, ethHTTPClient, logger)
 	if err != nil {
 		return nil, err
 	}

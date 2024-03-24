@@ -3,7 +3,6 @@ package preconshare
 import (
 	"context"
 	"encoding/json"
-	"strings"
 	"sync"
 	"time"
 
@@ -179,8 +178,4 @@ func (w *SimulationWorker) isBundleCancelled(ctx context.Context, bundle *SendRe
 		return false, err
 	}
 	return res, nil
-}
-
-func isErrorRecoverable(message string) bool {
-	return !strings.Contains(message, "nonce too low")
 }

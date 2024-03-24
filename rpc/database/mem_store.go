@@ -31,7 +31,7 @@ func (m *memStore) SaveRawTxEntries(entries []*EthSendRawTxEntry) error {
 	if len(entries) != 0 {
 		m.mutex.Lock()
 		defer m.mutex.Unlock()
-		m.EthSendRawTxs[entries[0].RequestId] = entries
+		m.EthSendRawTxs[entries[0].RequestID] = entries
 	}
 	return nil
 }

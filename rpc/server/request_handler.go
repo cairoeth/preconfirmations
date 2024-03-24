@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// RPC request handler for a single/ batch JSON-RPC request
+// RPCRequestHandler RPC request handler for a single/ batch JSON-RPC request
 type RPCRequestHandler struct {
 	respw               *http.ResponseWriter
 	req                 *http.Request
@@ -100,7 +100,7 @@ func (r *RPCRequestHandler) process() {
 	}
 
 	// mev-share parameters
-	urlParams, err := ExtractParametersFromUrl(r.req.URL, r.builderNames)
+	urlParams, err := ExtractParametersFromURL(r.req.URL, r.builderNames)
 	if err != nil {
 		r.logger.Warn("[process] Invalid auction preference", zap.Error(err))
 		res := AuctionPreferenceErrorToJSONRPCResponse(jsonReq, err)

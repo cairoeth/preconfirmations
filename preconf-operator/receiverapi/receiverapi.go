@@ -1,3 +1,4 @@
+// Package receiverapi contains the logic to receive preconfirmation callbacks.
 package receiverapi
 
 import (
@@ -14,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-type ReceiveApi struct {
+type ReceiveAPI struct {
 	ipPortAddr string
 	logger     logging.Logger
 	client     eth.EthClient
@@ -29,24 +30,24 @@ type ReceiveTx struct {
 	Tx *hexutil.Bytes `json:"tx,omitempty"`
 }
 
-type JsonRpcRequest struct {
-	Id      interface{} `json:"id"`
+type JSONRPCRequest struct {
+	ID      interface{} `json:"id"`
 	Method  string      `json:"method"`
 	Params  []ReceiveTx `json:"params"`
 	Version string      `json:"jsonrpc,omitempty"`
 }
 
-func NewReceiveApi(IpPortAddr string, logger logging.Logger, client eth.EthClient) *ReceiveApi {
-	receiveApi := &ReceiveApi{
-		ipPortAddr: IpPortAddr,
+func NewReceiveAPI(IPPortAddr string, logger logging.Logger, client eth.EthClient) *ReceiveAPI {
+	receiveAPI := &ReceiveAPI{
+		ipPortAddr: IPPortAddr,
 		logger:     logger,
 		client:     client,
 	}
-	return receiveApi
+	return receiveAPI
 }
 
 // Start starts the receiver api server in a goroutine
-func (api *ReceiveApi) Start() <-chan error {
+func (api *ReceiveAPI) Start() <-chan error {
 	api.logger.Infof("Starting receiver api server at address %v", api.ipPortAddr)
 
 	mux := http.NewServeMux()
@@ -60,9 +61,9 @@ func (api *ReceiveApi) Start() <-chan error {
 	return errChan
 }
 
-func (api *ReceiveApi) receive(w http.ResponseWriter, r *http.Request) {
+func (api *ReceiveAPI) receive(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-	var txs JsonRpcRequest
+	var txs JSONRPCRequest
 	err := decoder.Decode(&txs)
 	if err != nil {
 		api.logger.Error("could not read request body", "err", err)

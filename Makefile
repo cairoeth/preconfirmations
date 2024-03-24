@@ -55,7 +55,7 @@ lint:
 	gofmt -d -s .
 	gofumpt -d -extra .
 	go vet ./...
-	staticcheck ./...
+	go list ./... | grep -F -e contracts/ -v | xargs staticcheck
 	golangci-lint run
 
 fmt:

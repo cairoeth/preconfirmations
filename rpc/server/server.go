@@ -29,7 +29,7 @@ var Now = time.Now // used to mock time in tests
 
 var DebugDontSendTx = os.Getenv("DEBUG_DONT_SEND_RAWTX") != ""
 
-// Metamask fix helper
+// RState Metamask fix helper
 var RState *RedisState
 
 type BuilderNameProvider interface {
@@ -100,7 +100,7 @@ func NewRPCEndPointServer(cfg Configuration) (*RPCEndPointServer, error) {
 		proxyTimeoutSeconds: cfg.ProxyTimeoutSeconds,
 		proxyURL:            cfg.ProxyURL,
 		relaySigningKey:     cfg.RelaySigningKey,
-		relayURL:            cfg.RelayUrl,
+		relayURL:            cfg.RelayURL,
 		startTime:           Now(),
 		version:             cfg.Version,
 		chainID:             bts,

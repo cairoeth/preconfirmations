@@ -17,7 +17,7 @@ type Configuration struct {
 	ProxyURL            string
 	RedisURL            string
 	RelaySigningKey     *ecdsa.PrivateKey
-	RelayUrl            string
+	RelayURL            string
 	Version             string
 	BuilderInfoSource   string
 	FetchInfoInterval   int

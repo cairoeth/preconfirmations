@@ -1,3 +1,4 @@
+// Package webfile contains the fetcher logic
 package webfile
 
 import (
@@ -9,7 +10,7 @@ import (
 
 var ErrRequest = fmt.Errorf("request failed")
 
-// https://raw.githubusercontent.com/flashbots/dowg/main/builder-registrations.json
+// Fetcher https://raw.githubusercontent.com/flashbots/dowg/main/builder-registrations.json
 type Fetcher struct {
 	url string
 	cl  http.Client

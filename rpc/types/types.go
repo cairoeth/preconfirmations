@@ -1,3 +1,4 @@
+// Package types contains the types used in the JSON-RPC requests and responses.
 package types
 
 import (
@@ -47,7 +48,7 @@ type JSONRPCResponse struct {
 	Version string          `json:"jsonrpc"`
 }
 
-// JSONRPCError: https://www.jsonrpc.org/specification#error_object
+// JSONRPCError https://www.jsonrpc.org/specification#error_object
 type JSONRPCError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`

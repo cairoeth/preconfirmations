@@ -78,7 +78,7 @@ func testServerSetup(db database.Store) {
 		ProxyURL:            RPCBackendServerURL,
 		RedisURL:            redisServer.Addr(),
 		RelaySigningKey:     relaySigningKey,
-		RelayUrl:            RPCBackendServerURL,
+		RelayURL:            RPCBackendServerURL,
 		Version:             "test",
 	})
 	if err != nil {
@@ -227,7 +227,7 @@ func TestMetamaskFix(t *testing.T) {
 	testServerSetupWithMockStore()
 	testutils.MockTxAPIStatusForHash[testutils.TestTxMM2Hash] = types.TxStatusFailed
 
-	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTx_MM2_From, "latest"})
+	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTxMM2From, "latest"})
 	txCountBefore := testutils.SendRPCAndParseResponseOrFailNowString(t, reqGetTransactionCount)
 
 	// first sendRawTransaction call: rawTx that triggers the error (creates MM cache entry)
@@ -433,7 +433,7 @@ func TestBatch_eth_transaction(t *testing.T) {
 	testServerSetupWithMockStore()
 
 	var batch []*types.JSONRPCRequest
-	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTx_MM2_From, "latest"})
+	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTxMM2From, "latest"})
 	batch = append(batch, reqGetTransactionCount)
 	// first sendRawTransaction call: rawTx that triggers the error (creates MM cache entry)
 	reqSendRawTransaction := types.NewJSONRPCRequest(2, "eth_sendRawTransaction", []interface{}{testutils.TestTxMM2RawTx})
@@ -474,7 +474,7 @@ func TestBatch_eth_call(t *testing.T) {
 		"to":   "0xf1a54b0759b58661cea17cff19dd37940a9b5f1b",
 	}})
 	batch = append(batch, req2)
-	reqGetTransactionCount := types.NewJSONRPCRequest(3, "eth_getTransactionCount", []interface{}{testutils.TestTx_MM2_From, "latest"})
+	reqGetTransactionCount := types.NewJSONRPCRequest(3, "eth_getTransactionCount", []interface{}{testutils.TestTxMM2From, "latest"})
 	batch = append(batch, reqGetTransactionCount)
 	// first sendRawTransaction call: rawTx that triggers the error (creates MM cache entry)
 	reqSendRawTransaction := types.NewJSONRPCRequest(4, "eth_sendRawTransaction", []interface{}{testutils.TestTxMM2RawTx})
@@ -516,7 +516,7 @@ func TestBatch_CombinationOfSuccessAndFailure(t *testing.T) {
 		"to":   "0xf1a54b0759b58661cea17cff19dd37940a9b5f1b",
 	}})
 	batch = append(batch, req2)
-	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTx_MM2_From, "latest"})
+	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTxMM2From, "latest"})
 	batch = append(batch, reqGetTransactionCount)
 	// first sendRawTransaction call: rawTx that triggers the error (creates MM cache entry)
 	reqSendRawTransaction := types.NewJSONRPCRequest(1, "eth_sendRawTransactionxxx", []interface{}{testutils.TestTxMM2RawTx})
@@ -608,7 +608,7 @@ func TestWhitehatBundleCollectionGetBalance(t *testing.T) {
 	url := testutils.RPCEndpointURL + "?bundle=" + bundleID
 
 	// sendRawTransaction adds tx to MM cache entry, to be used at later eth_getTransactionReceipt call
-	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getBalance", []interface{}{testutils.TestTx_MM2_From, "latest"})
+	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getBalance", []interface{}{testutils.TestTxMM2From, "latest"})
 	resp, err := testutils.SendRPCAndParseResponseTo(url, reqGetTransactionCount)
 	require.Nil(t, err, err)
 	require.Nil(t, resp.Error, resp.Error)
@@ -665,7 +665,7 @@ func Test_StoreBatchRequests(t *testing.T) {
 		"to":   "0xf1a54b0759b58661cea17cff19dd37940a9b5f1b",
 	}})
 	batch = append(batch, req2)
-	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTx_MM2_From, "latest"})
+	reqGetTransactionCount := types.NewJSONRPCRequest(1, "eth_getTransactionCount", []interface{}{testutils.TestTxMM2From, "latest"})
 	batch = append(batch, reqGetTransactionCount)
 	// first sendRawTransaction call: rawTx that triggers the error (creates MM cache entry)
 	reqSendRawTransaction := types.NewJSONRPCRequest(1, "eth_sendRawTransaction", []interface{}{testutils.TestTxMM2RawTx})

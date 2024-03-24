@@ -25,7 +25,7 @@ func NewRequestRecord(db database.Store) *requestRecord {
 func (r *requestRecord) AddEthSendRawTxEntry(id uuid.UUID) *database.EthSendRawTxEntry {
 	entry := &database.EthSendRawTxEntry{
 		ID:        id,
-		RequestId: r.requestEntry.ID,
+		RequestID: r.requestEntry.ID,
 	}
 	r.mutex.Lock()
 	defer r.mutex.Unlock()

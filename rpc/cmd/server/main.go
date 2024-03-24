@@ -48,28 +48,7 @@ func main() {
 	var err error
 
 	flag.Parse()
-	// logFormat := log.TerminalFormat(true)
-	// if *logJSONPtr {
-	// 	logFormat = log.JSONFormat()
-	// }
 
-	// logLevel := log.LvlInfo
-	// if *debugPtr {
-	// 	logLevel = log.LvlDebug
-	// }
-
-	// log.Root().SetHandler(log.LvlFilterHandler(logLevel, log.StreamHandler(os.Stderr, logFormat)))
-	// logger := log.New()
-	// if *serviceName != "" {
-	// 	logger = logger.New(log.Ctx{"service": *serviceName})
-	// }
-	// // Perhaps print only the version
-	// if *versionPtr {
-	// 	logger.Info("rpc-endpoint", "version", version)
-	// 	return
-	// }
-
-	logger, _ := zap.NewDevelopment()
 	atom := zap.NewAtomicLevel()
 	if *debugPtr {
 		atom.SetLevel(zap.DebugLevel)
@@ -77,7 +56,7 @@ func main() {
 
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
-	logger = zap.New(zapcore.NewCore(
+	logger := zap.New(zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderCfg),
 		zapcore.Lock(os.Stdout),
 		atom,
@@ -119,7 +98,7 @@ func main() {
 		ProxyURL:            *proxyURL,
 		RedisURL:            *redisURL,
 		RelaySigningKey:     key,
-		RelayUrl:            *relayURL,
+		RelayURL:            *relayURL,
 		Version:             version,
 		BuilderInfoSource:   *builderInfoSource,
 		FetchInfoInterval:   *fetchIntervalSeconds,

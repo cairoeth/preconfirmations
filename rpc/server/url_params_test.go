@@ -208,7 +208,7 @@ func TestExtractAuctionPreferenceFromUrl(t *testing.T) {
 				t.Fatal("failed to parse url: ", err)
 			}
 
-			got, err := ExtractParametersFromUrl(url, []string{"builder1", "builder2"})
+			got, err := ExtractParametersFromURL(url, []string{"builder1", "builder2"})
 			if tt.err != nil {
 				require.ErrorIs(t, err, tt.err)
 			} else {

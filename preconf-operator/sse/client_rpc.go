@@ -56,16 +56,13 @@ func (s *Subscription) readEvents() {
 		var event MatchMakerEvent
 		err = json.Unmarshal([]byte(msg.Payload), &event)
 
-		select {
-		default:
-			if err != nil {
-				s.eventChan <- Event{
-					Error: err,
-				}
-			} else {
-				s.eventChan <- Event{
-					Data: &event,
-				}
+		if err != nil {
+			s.eventChan <- Event{
+				Error: err,
+			}
+		} else {
+			s.eventChan <- Event{
+				Data: &event,
 			}
 		}
 	}

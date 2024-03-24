@@ -1,4 +1,4 @@
-// OFAC banned addresses
+/* Package server OFAC banned addresses */
 package server
 
 import "strings"

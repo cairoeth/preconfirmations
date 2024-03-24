@@ -1,3 +1,4 @@
+// Package application contains the logic to start the builder info service.
 package application
 
 import (
@@ -5,7 +6,6 @@ import (
 	"encoding/json"
 	"strings"
 	"time"
-	// "go.uber.org/zap"
 )
 
 type BuilderInfo struct {
@@ -52,11 +52,7 @@ func (bis *BuilderInfoService) syncLoop(fetchInterval time.Duration) {
 	ticker := time.NewTicker(fetchInterval)
 	for range ticker.C {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-		err := bis.fetchBuilderInfo(ctx)
-		if err != nil {
-			// TODO: probably panic on multiple consequent errors, though it's not critical in nature
-			// log.Error("failed to fetch builder info", zap.Error(err))
-		}
+		_ = bis.fetchBuilderInfo(ctx)
 		cancel()
 	}
 }

@@ -1,6 +1,3 @@
-/*
- * Test helpers.
- */
 package testutils
 
 import (

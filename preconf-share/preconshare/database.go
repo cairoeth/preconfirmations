@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -15,11 +14,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var (
-	ethToWei = big.NewInt(1e18)
-
-	ErrBundleNotCancelled = errors.New("bundle not cancelled")
-)
+var ErrBundleNotCancelled = errors.New("bundle not cancelled")
 
 type DBSbundle struct {
 	Hash               []byte         `db:"hash"`
@@ -363,10 +358,6 @@ func (b *DBBackend) InsertBundleForStats(ctx context.Context, bundle *SendReques
 		return known, err
 	}
 	return known, dbTx.Commit()
-}
-
-func dbIntToEth(i *hexutil.Big) string {
-	return new(big.Rat).SetFrac(i.ToInt(), ethToWei).FloatString(18)
 }
 
 func (b *DBBackend) InsertPreconf(ctx context.Context, preconf *ConfirmRequestArgs) error {

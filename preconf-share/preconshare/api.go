@@ -25,9 +25,7 @@ var (
 
 	ErrInternalServiceError = errors.New("mev-share service error")
 
-	simBundleTimeout    = 500 * time.Millisecond
-	cancelBundleTimeout = 3 * time.Second
-	bundleCacheSize     = 1000
+	bundleCacheSize = 1000
 )
 
 type SimScheduler interface {
@@ -81,17 +79,6 @@ func NewAPI(
 		knownBundleCache:  lru.NewCache[common.Hash, SendRequestArgs](bundleCacheSize),
 		cancellationCache: cancellationCache,
 	}
-}
-
-func findAndReplace(strs []common.Hash, old, replacer common.Hash) bool {
-	var found bool
-	for i, str := range strs {
-		if str == old {
-			strs[i] = replacer
-			found = true
-		}
-	}
-	return found
 }
 
 func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendRequestResponse, err error) {

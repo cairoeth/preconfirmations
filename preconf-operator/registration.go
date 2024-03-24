@@ -72,7 +72,7 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 		return err
 	}
 
-	txOpts, err := o.avsWriter.TxMgr.GetNoSendTxOpts()
+	txOpts, _ := o.avsWriter.TxMgr.GetNoSendTxOpts()
 	tx, err := contractErc20Mock.Mint(txOpts, o.operatorAddr, amount)
 	if err != nil {
 		o.logger.Error("Error assembling Mint tx", "err", err)
@@ -92,7 +92,7 @@ func (o *Operator) DepositIntoStrategy(strategyAddr common.Address, amount *big.
 	return nil
 }
 
-// Registration specific functions
+// RegisterOperatorWithAvs Registration specific functions
 func (o *Operator) RegisterOperatorWithAvs(
 	operatorEcdsaKeyPair *ecdsa.PrivateKey,
 ) error {

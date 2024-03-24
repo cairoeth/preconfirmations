@@ -29,8 +29,8 @@ func main() {
 	}
 }
 
-func operatorMain(ctx_cli *cli.Context) error {
-	configPath := ctx_cli.GlobalString(config.ConfigFileFlag.Name)
+func operatorMain(ctxCli *cli.Context) error {
+	configPath := ctxCli.GlobalString(config.ConfigFileFlag.Name)
 	nodeConfig := types.NodeConfig{}
 	err := sdkutils.ReadYamlConfig(configPath, &nodeConfig)
 	if err != nil {

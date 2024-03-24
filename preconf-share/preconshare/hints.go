@@ -125,18 +125,6 @@ func ExtractHints(bundle *SendRequestArgs) (Hint, error) {
 	return hint, nil
 }
 
-func cleanLogs(logs []*types.Log) []CleanLog {
-	res := make([]CleanLog, len(logs))
-	for i, log := range logs {
-		res[i] = CleanLog{
-			Address: log.Address,
-			Topics:  log.Topics,
-			Data:    log.Data,
-		}
-	}
-	return res
-}
-
 // Swap (index_topic_1 address sender, uint256 amount0In, uint256 amount1In, uint256 amount0Out, uint256 amount1Out, index_topic_2 address to)
 var uni2log = common.HexToHash("0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822")
 

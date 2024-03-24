@@ -1,3 +1,4 @@
+// Package database contains the types used in the database.
 package database
 
 import (
@@ -26,7 +27,7 @@ type RequestEntry struct {
 // EthSendRawTxEntry to store each eth_sendRawTransaction calls
 type EthSendRawTxEntry struct {
 	ID                          uuid.UUID `db:"id"`
-	RequestId                   uuid.UUID `db:"request_id"` // id from RequestEntry table
+	RequestID                   uuid.UUID `db:"request_id"` // id from RequestEntry table
 	InsertedAt                  time.Time `db:"inserted_at"`
 	IsOnOafcList                bool      `db:"is_on_oafc_list"`
 	IsWhiteHatBundleCollection  bool      `db:"is_white_hat_bundle_collection"`

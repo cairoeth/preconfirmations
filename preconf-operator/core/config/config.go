@@ -1,3 +1,4 @@
+// Package config contains the config types.
 package config
 
 import (
@@ -25,14 +26,14 @@ type Config struct {
 	EcdsaPrivateKey           *ecdsa.PrivateKey
 	BlsPrivateKey             *bls.PrivateKey
 	Logger                    sdklogging.Logger
-	EigenMetricsIpPortAddress string
+	EigenMetricsIPPortAddress string
 	// we need the url for the eigensdk currently... eventually standardize api so as to
 	// only take an ethclient or an rpcUrl (and build the ethclient at each constructor site)
-	EthHttpRpcUrl                             string
-	EthHttpClient                             eth.EthClient
+	EthHTTPRPCURL                             string
+	EthHTTPClient                             eth.EthClient
 	OperatorStateRetrieverAddr                common.Address
 	IncredibleSquaringRegistryCoordinatorAddr common.Address
-	AggregatorServerIpPortAddr                string
+	AggregatorServerIPPortAddr                string
 	RegisterOperatorOnStartup                 bool
 	// json:"-" skips this field when marshaling (only used for logging to stdout), since SignerFn doesnt implement marshalJson
 	SignerFn          signerv2.SignerFn `json:"-"`
@@ -40,15 +41,15 @@ type Config struct {
 	AggregatorAddress common.Address
 }
 
-// These are read from ConfigFileFlag
+// ConfigRaw These are read from ConfigFileFlag
 type ConfigRaw struct {
 	Environment                sdklogging.LogLevel `yaml:"environment"`
-	EthRpcUrl                  string              `yaml:"eth_rpc_url"`
-	AggregatorServerIpPortAddr string              `yaml:"aggregator_server_ip_port_address"`
+	EthRPCURL                  string              `yaml:"eth_rpc_url"`
+	AggregatorServerIPPortAddr string              `yaml:"aggregator_server_ip_port_address"`
 	RegisterOperatorOnStartup  bool                `yaml:"register_operator_on_startup"`
 }
 
-// These are read from CredibleSquaringDeploymentFileFlag
+// IncredibleSquaringDeploymentRaw These are read from CredibleSquaringDeploymentFileFlag
 type IncredibleSquaringDeploymentRaw struct {
 	Addresses IncredibleSquaringContractsRaw `json:"addresses"`
 }
@@ -79,7 +80,7 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		return nil, err
 	}
 
-	ethRpcClient, err := eth.NewClient(configRaw.EthRpcUrl)
+	ethRPCClient, err := eth.NewClient(configRaw.EthRPCURL)
 	if err != nil {
 		logger.Errorf("Cannot create http ethclient", "err", err)
 		return nil, err
@@ -101,26 +102,26 @@ func NewConfig(ctx *cli.Context) (*Config, error) {
 		return nil, err
 	}
 
-	chainId, err := ethRpcClient.ChainID(context.Background())
+	chainID, err := ethRPCClient.ChainID(context.Background())
 	if err != nil {
-		logger.Error("Cannot get chainId", "err", err)
+		logger.Error("Cannot get chainID", "err", err)
 		return nil, err
 	}
 
-	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{PrivateKey: ecdsaPrivateKey}, chainId)
+	signerV2, _, err := signerv2.SignerFromConfig(signerv2.Config{PrivateKey: ecdsaPrivateKey}, chainID)
 	if err != nil {
 		panic(err)
 	}
-	txMgr := txmgr.NewSimpleTxManager(ethRpcClient, logger, signerV2, aggregatorAddr)
+	txMgr := txmgr.NewSimpleTxManager(ethRPCClient, logger, signerV2, aggregatorAddr)
 
 	config := &Config{
 		EcdsaPrivateKey:            ecdsaPrivateKey,
 		Logger:                     logger,
-		EthHttpRpcUrl:              configRaw.EthRpcUrl,
-		EthHttpClient:              ethRpcClient,
+		EthHTTPRPCURL:              configRaw.EthRPCURL,
+		EthHTTPClient:              ethRPCClient,
 		OperatorStateRetrieverAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.OperatorStateRetrieverAddr),
 		IncredibleSquaringRegistryCoordinatorAddr: common.HexToAddress(credibleSquaringDeploymentRaw.Addresses.RegistryCoordinatorAddr),
-		AggregatorServerIpPortAddr:                configRaw.AggregatorServerIpPortAddr,
+		AggregatorServerIPPortAddr:                configRaw.AggregatorServerIPPortAddr,
 		RegisterOperatorOnStartup:                 configRaw.RegisterOperatorOnStartup,
 		SignerFn:                                  signerV2,
 		TxMgr:                                     txMgr,

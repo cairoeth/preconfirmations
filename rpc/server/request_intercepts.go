@@ -11,7 +11,7 @@ import (
 var ProtectTxAPIHost = GetEnv("TX_API_HOST", "https://protect.flashbots.net")
 
 // If public getTransactionReceipt of a submitted tx is null, then check internal API to see if tx has failed
-func (r *RPCRequest) check_post_getTransactionReceipt(jsonResp *types.JSONRPCResponse) (requestFinished bool) {
+func (r *RPCRequest) checkPostGetTransactionReceipt(jsonResp *types.JSONRPCResponse) (requestFinished bool) {
 	if jsonResp == nil {
 		return false
 	}
@@ -80,7 +80,7 @@ func (r *RPCRequest) check_post_getTransactionReceipt(jsonResp *types.JSONRPCRes
 		// 	// NOTE: This branch can never happen, because if tx is included then Receipt will not return null
 		// 	// TODO? If latest tx of this user was a successful, then we should remove the nonce fix
 		// 	// This could lead to a ping-pong between checking 2 tx, with one check adding and another removing the nonce fix
-		// 	// See also the branch tmp-check_post_getTransactionReceipt-removeNonceFix
+		// 	// See also the branch tmp-checkPostGetTransactionReceipt-removeNonceFix
 		// 	_ = 1
 	}
 

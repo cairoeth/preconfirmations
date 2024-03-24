@@ -11,28 +11,28 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/logging"
 )
 
-type AggregatorRpcClienter interface {
+type AggregatorRPCClienter interface {
 	SendSignedTaskResponseToAggregator(signedTaskResponse *aggregator.SignedTaskResponse)
 }
-type AggregatorRpcClient struct {
+type AggregatorRPCClient struct {
 	rpcClient            *rpc.Client
 	metrics              metrics.Metrics
 	logger               logging.Logger
-	aggregatorIpPortAddr string
+	aggregatorIPPortAddr string
 }
 
-func NewAggregatorRpcClient(aggregatorIpPortAddr string, logger logging.Logger, metrics metrics.Metrics) (*AggregatorRpcClient, error) {
-	return &AggregatorRpcClient{
+func NewAggregatorRPCClient(aggregatorIPPortAddr string, logger logging.Logger, metrics metrics.Metrics) (*AggregatorRPCClient, error) {
+	return &AggregatorRPCClient{
 		// set to nil so that we can create an rpc client even if the aggregator is not running
 		rpcClient:            nil,
 		metrics:              metrics,
 		logger:               logger,
-		aggregatorIpPortAddr: aggregatorIpPortAddr,
+		aggregatorIPPortAddr: aggregatorIPPortAddr,
 	}, nil
 }
 
-func (c *AggregatorRpcClient) dialAggregatorRpcClient() error {
-	client, err := rpc.DialHTTP("tcp", c.aggregatorIpPortAddr)
+func (c *AggregatorRPCClient) dialAggregatorRPCClient() error {
+	client, err := rpc.DialHTTP("tcp", c.aggregatorIPPortAddr)
 	if err != nil {
 		return err
 	}
@@ -45,10 +45,10 @@ func (c *AggregatorRpcClient) dialAggregatorRpcClient() error {
 // this is because sending the signed task response to the aggregator is time sensitive,
 // so there is no point in retrying if it fails for a few times.
 // Currently hardcoded to retry sending the signed task response 5 times, waiting 2 seconds in between each attempt.
-func (c *AggregatorRpcClient) SendSignedTaskResponseToAggregator(signedTaskResponse *aggregator.SignedTaskResponse) {
+func (c *AggregatorRPCClient) SendSignedTaskResponseToAggregator(signedTaskResponse *aggregator.SignedTaskResponse) {
 	if c.rpcClient == nil {
 		c.logger.Info("rpc client is nil. Dialing aggregator rpc client")
-		err := c.dialAggregatorRpcClient()
+		err := c.dialAggregatorRPCClient()
 		if err != nil {
 			c.logger.Error("Could not dial aggregator rpc client. Not sending signed task response header to aggregator. Is aggregator running?", "err", err)
 			return

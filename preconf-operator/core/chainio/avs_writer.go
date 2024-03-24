@@ -20,13 +20,12 @@ type AvsWriter struct {
 	AvsContractBindings *AvsManagersBindings
 	logger              logging.Logger
 	TxMgr               txmgr.TxManager
-	client              eth.EthClient
 }
 
 var _ AvsWriterer = (*AvsWriter)(nil)
 
 func BuildAvsWriterFromConfig(c *config.Config) (*AvsWriter, error) {
-	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHttpClient, c.Logger)
+	return BuildAvsWriter(c.TxMgr, c.IncredibleSquaringRegistryCoordinatorAddr, c.OperatorStateRetrieverAddr, c.EthHTTPClient, c.Logger)
 }
 
 func BuildAvsWriter(txMgr txmgr.TxManager, registryCoordinatorAddr, operatorStateRetrieverAddr gethcommon.Address, ethHTTPClient eth.EthClient, logger logging.Logger) (*AvsWriter, error) {
