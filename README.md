@@ -1,9 +1,9 @@
-# 🔌 Preconfirmations AVS 
+# 🔌 Preconfirmations
 
 [![Goreport status](https://goreportcard.com/badge/github.com/flashbots/mev-boost)](https://goreportcard.com/report/github.com/flashbots/mev-boost)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
-Preconfirmation protocol allowing users to get sub-second transaction confirmations on Ethereum, powered by EigenLayer.
+Preconfirmation protocol allowing users to get sub-second transaction confirmations on Ethereum.
 
 > This is **experimental software** and is provided on an "as is" and "as available" basis. We **do not give any warranties** and **will not be liable for any losses** incurred through any use of this code base.
 
@@ -106,7 +106,6 @@ After running all the components, make sure to wait around 10 seconds for the AV
 pip install -r requirements.txt
 
 python test_tx.py
-
 ```
 
 This example generates a random transaction that transfers Ether to itself. Check the protocol logs to see how the transaction is preconfirmed and included in the next block.
