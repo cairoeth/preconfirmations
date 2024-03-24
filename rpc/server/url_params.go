@@ -139,7 +139,7 @@ func AuctionPreferenceErrorToJSONRPCResponse(jsonReq *types.JsonRpcRequest, err 
 	message := fmt.Sprintf("Invalid auction preference in the rpc endpoint url. %s", err.Error())
 	return &types.JsonRpcResponse{
 		Id:      jsonReq.Id,
-		Error:   &types.JsonRpcError{Code: types.JsonRpcInvalidRequest, Message: message},
+		Error:   &types.JSONRPCError{Code: types.JsonRpcInvalidRequest, Message: message},
 		Version: "2.0",
 	}
 }

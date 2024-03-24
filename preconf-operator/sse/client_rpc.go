@@ -50,7 +50,7 @@ func (s *Subscription) readEvents() {
 	for {
 		msg, err := s.pubsub.ReceiveMessage(context.Background())
 		if err != nil {
-			fmt.Printf("Error occured receiving message from Preconf-Share stream", err)
+			fmt.Printf("Error occured receiving message from preconf-share stream %v", err)
 		}
 
 		var event MatchMakerEvent

@@ -43,17 +43,17 @@ func NewJsonRpcRequest1(id interface{}, method string, param interface{}) *JsonR
 type JsonRpcResponse struct {
 	Id      interface{}     `json:"id"`
 	Result  json.RawMessage `json:"result,omitempty"`
-	Error   *JsonRpcError   `json:"error,omitempty"`
+	Error   *JSONRPCError   `json:"error,omitempty"`
 	Version string          `json:"jsonrpc"`
 }
 
 // RpcError: https://www.jsonrpc.org/specification#error_object
-type JsonRpcError struct {
+type JSONRPCError struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
-func (err JsonRpcError) Error() string {
+func (err JSONRPCError) Error() string {
 	return fmt.Sprintf("Error %d (%s)", err.Code, err.Message)
 }
 

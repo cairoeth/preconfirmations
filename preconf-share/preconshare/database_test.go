@@ -2,7 +2,7 @@ package preconshare
 
 import (
 	"context"
-	"math/big"
+	"database/sql"
 	"testing"
 	"time"
 
@@ -14,6 +14,18 @@ import (
 )
 
 var testPostgresDSN = cli.GetEnv("TEST_POSTGRES_DSN", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable")
+
+type DBSbundleBuilder struct {
+	Hash           []byte         `db:"hash"`
+	Cancelled      bool           `db:"cancelled"`
+	Block          int64          `db:"block"`
+	MaxBlock       int64          `db:"max_block"`
+	SimStateBlock  sql.NullInt64  `db:"sim_state_block"`
+	SimEffGasPrice sql.NullString `db:"sim_eff_gas_price"`
+	SimProfit      sql.NullString `db:"sim_profit"`
+	Body           []byte         `db:"body"`
+	InsertedAt     time.Time      `db:"inserted_at"`
+}
 
 func TestDBBackend_GetBundle(t *testing.T) {
 	b, err := NewDBBackend(testPostgresDSN)
@@ -73,9 +85,8 @@ func TestDBBackend_InsertBundleForStats(t *testing.T) {
 		},
 		Body: []RequestBody{{Tx: (*hexutil.Bytes)(&tx)}},
 		Privacy: &RequestPrivacy{
-			Hints:      HintHash,
-			Builders:   nil,
-			WantRefund: nil,
+			Hints:     HintHash,
+			Operators: nil,
 		},
 		Metadata: &RequestMetadata{
 			RequestHash: bundleHash,
@@ -211,31 +222,6 @@ func TestDBBackend_InsertBundleForBuilder(t *testing.T) {
 	// Delete bundle if it exists
 	_, err = b.db.Exec("DELETE FROM sbundle_builder WHERE hash = $1", bundleHash.Bytes())
 	require.NoError(t, err)
-
-	receivedAt := time.Now()
-	tx := common.Hex2Bytes("0x0102030405060708091011121314151617181920212223242526272829303132")
-	signer := common.HexToAddress("0x0102030405060708091011121314151617181920")
-
-	bundle := SendRequestArgs{
-		Version: "v0.1",
-		Inclusion: RequestInclusion{
-			DesiredBlock: 6,
-			MaxBlock:     8,
-		},
-		Body: []RequestBody{{Tx: (*hexutil.Bytes)(&tx)}},
-		Privacy: &RequestPrivacy{
-			Hints:      HintHash,
-			Builders:   nil,
-			WantRefund: nil,
-		},
-		Metadata: &RequestMetadata{
-			BundleHash: bundleHash,
-			BodyHashes: []common.Hash{bundleHash},
-			Signer:     signer,
-			OriginID:   "test-origin",
-			ReceivedAt: hexutil.Uint64(receivedAt.UnixMicro()),
-		},
-	}
 
 	var dbBundle DBSbundleBuilder
 	err = b.db.Get(&dbBundle, "SELECT * FROM sbundle_builder WHERE hash = $1", bundleHash.Bytes())

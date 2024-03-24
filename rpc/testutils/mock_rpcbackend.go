@@ -98,7 +98,7 @@ func RpcBackendHandler(w http.ResponseWriter, req *http.Request) {
 		log.Println("returnError:", msg)
 		res := types.JsonRpcResponse{
 			Id: id,
-			Error: &types.JsonRpcError{
+			Error: &types.JSONRPCError{
 				Code:    -32603,
 				Message: msg,
 			},

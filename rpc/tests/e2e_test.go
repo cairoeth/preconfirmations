@@ -31,11 +31,12 @@ var RpcBackendServerUrl string
 var relaySigningKey *ecdsa.PrivateKey
 
 func init() {
-	var err error
-	relaySigningKey, err = crypto.HexToECDSA("7bdeed70a07d5a45546e83a88dd430f71348592e747d2d3eb23f32db003eb0e1")
-	if err != nil {
-		log.Error("failed to create signing key", zap.Error(err))
-	}
+	// var err error
+	relaySigningKey, _ = crypto.HexToECDSA("7bdeed70a07d5a45546e83a88dd430f71348592e747d2d3eb23f32db003eb0e1")
+	// if err != nil {
+	// logger.Crit("failed to create signing key", "err", err)
+	// log.Crit("failed to create signing key", "err", err)
+	// }
 }
 
 // func setServerTimeNowOffset(td time.Duration) {
@@ -67,10 +68,12 @@ func testServerSetup(db database.Store) {
 	txApiServer := httptest.NewServer(http.HandlerFunc(testutils.MockTxApiHandler))
 	server.ProtectTxApiHost = txApiServer.URL
 
+	logger, _ := zap.NewDevelopment()
+
 	// Create a fresh RPC endpoint server
 	rpcServer, err := server.NewRpcEndPointServer(server.Configuration{
 		DB:                  db,
-		Logger:              log.New("testlogger"),
+		Logger:              logger,
 		ProxyTimeoutSeconds: 10,
 		ProxyUrl:            RpcBackendServerUrl,
 		RedisUrl:            redisServer.Addr(),

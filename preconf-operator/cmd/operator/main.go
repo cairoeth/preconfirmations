@@ -36,11 +36,11 @@ func operatorMain(ctx_cli *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	configJson, err := json.MarshalIndent(nodeConfig, "", "  ")
+	configJSON, err := json.MarshalIndent(nodeConfig, "", "  ")
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	log.Println("Config:", string(configJson))
+	log.Println("Config:", string(configJSON))
 
 	log.Println("Initializing operator")
 	operator, err := operator.NewOperatorFromConfig(nodeConfig)

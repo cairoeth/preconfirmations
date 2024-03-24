@@ -89,7 +89,7 @@ func SendRpcAndParseResponseTo(url string, req *types.JsonRpcRequest) (*types.Js
 	errorResp := new(types.RelayErrorResponse)
 	if err := json.Unmarshal(respData, errorResp); err == nil && errorResp.Error != "" {
 		// relay returned an error, convert to standard JSON-RPC error now
-		jsonRpcResp.Error = &types.JsonRpcError{Message: errorResp.Error}
+		jsonRpcResp.Error = &types.JSONRPCError{Message: errorResp.Error}
 		return jsonRpcResp, nil
 	}
 

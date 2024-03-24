@@ -41,6 +41,10 @@ run-anvil:
 run-all:
 	make -j run-anvil run-share run-operator
 
+# Run all in background and example (used by CI)
+run-ci:
+	make run-all & && sleep 200 && python test_tx.py && exit 0
+
 test:
 	go test ./...
 

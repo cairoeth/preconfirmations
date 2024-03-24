@@ -47,7 +47,7 @@ type RpcEndPointServer struct {
 	listenAddress       string
 	logger              *zap.Logger
 	proxyTimeoutSeconds int
-	proxyUrl            string
+	proxyURL            string
 	relaySigningKey     *ecdsa.PrivateKey
 	relayUrl            string
 	startTime           time.Time
@@ -98,7 +98,7 @@ func NewRpcEndPointServer(cfg Configuration) (*RpcEndPointServer, error) {
 		listenAddress:       cfg.ListenAddress,
 		logger:              cfg.Logger,
 		proxyTimeoutSeconds: cfg.ProxyTimeoutSeconds,
-		proxyUrl:            cfg.ProxyUrl,
+		proxyURL:            cfg.ProxyUrl,
 		relaySigningKey:     cfg.RelaySigningKey,
 		relayUrl:            cfg.RelayUrl,
 		startTime:           Now(),
@@ -237,7 +237,7 @@ func (s *RpcEndPointServer) HandleHttpRequest(respw http.ResponseWriter, req *ht
 		return
 	}
 
-	request := NewRpcRequestHandler(s.logger, &respw, req, s.proxyUrl, s.proxyTimeoutSeconds, s.relaySigningKey, s.relayUrl, s.db, s.builderNameProvider.BuilderNames(), s.chainID)
+	request := NewRpcRequestHandler(s.logger, &respw, req, s.proxyURL, s.proxyTimeoutSeconds, s.relaySigningKey, s.relayUrl, s.db, s.builderNameProvider.BuilderNames(), s.chainID)
 	request.process()
 }
 

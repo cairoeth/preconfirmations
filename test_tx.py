@@ -37,20 +37,27 @@ def request():
         "jsonrpc": "2.0"
     })
 
+    json_response = r.json()
+
+    if json_response["result"]["preconfSignature"] is None:
+        raise Exception("No preconfirmation") 
+
     print(f"Status Code (request): {r.status_code}, Response: {r.json()}")
 
-def threaded_process_range():
-    store = {}
-    threads = []
+# def threaded_process_range():
+#     store = {}
+#     threads = []
 
-    # create the threads
-    threads.append(Thread(target=request))
+#     # create the threads
+#     threads.append(Thread(target=request))
 
-    # start the threads
-    [t.start() for t in threads]
-    # wait for the threads to finish
-    [t.join() for t in threads]
-    return store
+#     # start the threads
+#     [t.start() for t in threads]
+#     # wait for the threads to finish
+#     [t.join() for t in threads]
+#     return store
 
 
-threaded_process_range()
+# threaded_process_range()
+    
+request()

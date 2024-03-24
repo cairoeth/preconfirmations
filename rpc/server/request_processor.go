@@ -471,7 +471,7 @@ func (r *RpcRequest) writeRpcError(msg string, errCode int) {
 	r.jsonRes = &types.JsonRpcResponse{
 		Id:      r.jsonReq.Id,
 		Version: "2.0",
-		Error: &types.JsonRpcError{
+		Error: &types.JSONRPCError{
 			Code:    errCode,
 			Message: msg,
 		},

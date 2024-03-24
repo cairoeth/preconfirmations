@@ -132,7 +132,7 @@ func respBytesToJsonRPCResponse(respBytes []byte) (*types.JsonRpcResponse, error
 	errorResp := new(types.RelayErrorResponse)
 	if err := json.Unmarshal(respBytes, errorResp); err == nil && errorResp.Error != "" {
 		// relay returned an error, convert to standard JSON-RPC error now
-		jsonRpcResp.Error = &types.JsonRpcError{Message: errorResp.Error}
+		jsonRpcResp.Error = &types.JSONRPCError{Message: errorResp.Error}
 		return jsonRpcResp, nil
 	}
 

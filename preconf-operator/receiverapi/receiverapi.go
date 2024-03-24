@@ -21,8 +21,8 @@ type ReceiveApi struct {
 }
 
 type ReceiveResponse struct {
-	jsonrpc string `json:"jsonrpc"`
-	id      int    `json:"id"`
+	jsonrpc string
+	id      int
 }
 
 type ReceiveTx struct {
