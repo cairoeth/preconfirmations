@@ -280,7 +280,7 @@ func (o *Operator) Start(ctx context.Context) error {
 			o.logger.Fatal("Error in metrics server", "err", err)
 		case event := <-eventChan:
 			if event.Error != nil {
-				o.logger.Error("Error occured from Preconf-Share stream", "err", event.Error)
+				o.logger.Error("Error occurred from Preconf-Share stream", "err", event.Error)
 				sub.Stop()
 			}
 
@@ -295,7 +295,7 @@ func (o *Operator) Start(ctx context.Context) error {
 				sub.Stop()
 			}
 
-			// TOOD: update this
+			// TODO: update this
 			dataToSign := "{request: wwdwdw}"
 
 			// keccak256 hash of the data
@@ -304,7 +304,7 @@ func (o *Operator) Start(ctx context.Context) error {
 
 			signatureBytes, err := crypto.Sign(hashData.Bytes(), privateKey)
 			if err != nil {
-				o.logger.Error("Error occured signing preconfirmation", "err", err)
+				o.logger.Error("Error occurred signing preconfirmation", "err", err)
 				sub.Stop()
 			}
 

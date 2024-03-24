@@ -157,7 +157,7 @@ func (m *API) ConfirmRequest(ctx context.Context, confirmation ConfirmRequestArg
 
 	logger.Info("Received request connfirmation")
 
-	// TODO: validate confirmation (check signature, that is targetted for the current request, etc.)
+	// TODO: validate confirmation (check signature, that is targeted for the current request, etc.)
 
 	// Store preconfirmation in database.
 	err = m.bundleStorage.InsertPreconf(ctx, &confirmation)

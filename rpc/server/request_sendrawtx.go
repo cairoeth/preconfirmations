@@ -50,7 +50,6 @@ func (r *RPCRequest) handleSendRawTransaction() {
 	// Get address from tx
 	r.txFrom, err = GetSenderFromRawTx(r.tx)
 	if err != nil {
-
 		r.logger.Info("[sendRawTransaction] Couldn't get address from rawTx", zap.Error(err))
 		r.writeRPCError(fmt.Sprintf("couldn't get address from rawTx: %v", err), types.JSONRPCInvalidRequest)
 		return

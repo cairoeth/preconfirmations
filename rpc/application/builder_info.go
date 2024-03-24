@@ -31,7 +31,6 @@ func StartBuilderInfoService(ctx context.Context, fetcher Fetcher, fetchInterval
 			return nil, err
 		}
 		go bis.syncLoop(fetchInterval)
-
 	}
 	return &bis, nil
 }

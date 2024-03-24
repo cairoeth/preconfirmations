@@ -304,37 +304,6 @@ func (s *RedisQueue) processNextItem(ctx context.Context, process ProcessFunc) e
 
 	nextBlock := atomic.LoadUint64(s.currentBlock) + 1
 
-	// // too early to process, requeue
-	// if nextBlock < args.minTargetBlock {
-	// 	err := s.retryItem(ctx, args, false, false, back)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return nil
-	// }
-
-	// // stale item, skip or requeue for the next block
-	// if nextBlock > args.minTargetBlock {
-	// 	if nextBlock > args.maxTargetBlock {
-	// 		metrics.IncQueuePopStaleItemSbundles()
-	// 		s.log.Debug("skipping stale item",
-	// 			zap.Uint64("next_block", nextBlock),
-	// 			zap.Uint16("iterations", args.iteration),
-	// 			zap.Uint64("min_target_block", args.minTargetBlock),
-	// 			zap.Uint64("max_target_block", args.maxTargetBlock))
-	// 		return nil
-	// 	}
-
-	// 	// requeue for the next block
-	// 	args.minTargetBlock = nextBlock
-
-	// 	err := s.retryItem(ctx, args, false, false, back)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return nil
-	// }
-
 	// process item
 	workerCtx, workerCancel := context.WithTimeout(ctx, s.Config.WorkerTimeout)
 	defer workerCancel()
@@ -361,12 +330,6 @@ func (s *RedisQueue) processNextItem(ctx context.Context, process ProcessFunc) e
 		}
 	case errors.Is(err, ErrProcessUnrecoverable):
 		s.log.Debug("worker iteration failed, unrecoverable error", zap.Error(err), zap.Uint16("iteration", args.iteration))
-	// case err == nil:
-	// 	s.log.Debug("worker iteration succeeded, scheduling for the next block", zap.Uint16("iteration", args.iteration))
-	// 	err := s.retryItem(ctx, args, true, true, back)
-	// 	if err != nil && !errors.Is(err, ErrNoNextBlock) {
-	// 		return err
-	// 	}
 	case err != nil:
 		return err
 	}

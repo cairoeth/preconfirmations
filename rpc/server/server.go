@@ -315,11 +315,9 @@ func (s *RPCEndPointServer) HandleBundleRequest(respw http.ResponseWriter, req *
 		respw.Header().Set("Content-Type", "application/json")
 		respw.WriteHeader(http.StatusOK)
 		respw.Write(jsonResp)
-
 	} else if req.Method == http.MethodDelete {
 		RState.DelWhitehatBundleTx(bundleID)
 		respw.WriteHeader(http.StatusOK)
-
 	} else {
 		respw.WriteHeader(http.StatusMethodNotAllowed)
 	}
