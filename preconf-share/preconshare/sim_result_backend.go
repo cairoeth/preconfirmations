@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-share/simqueue"
+	"github.com/cairoeth/preconfirmations/preconf-share/simqueue"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ybbus/jsonrpc/v3"

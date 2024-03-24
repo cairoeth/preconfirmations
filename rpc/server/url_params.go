@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pkg/errors"
 )

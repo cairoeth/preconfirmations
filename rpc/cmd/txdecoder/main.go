@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/server"
+	"github.com/cairoeth/preconfirmations/rpc/server"
 )
 
 var rawTx = ""

@@ -3,22 +3,14 @@ package main
 import (
 	"context"
 	"encoding/json"
-	// "errors"
-	// "fmt"
 	"log"
-	// "net/http"
 	"os"
-	// "os/signal"
-	// "syscall"
-	// "time"
 
 	"github.com/urfave/cli"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/config"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/types"
-
-	// "github.com/cairoeth/preconfirmations-avs/preconf-share/jsonrpcserver"
+	"github.com/cairoeth/preconfirmations/preconf-operator"
+	"github.com/cairoeth/preconfirmations/preconf-operator/core/config"
+	"github.com/cairoeth/preconfirmations/preconf-operator/types"
 
 	sdkutils "github.com/Layr-Labs/eigensdk-go/utils"
 )

@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"

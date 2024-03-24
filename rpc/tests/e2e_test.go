@@ -14,12 +14,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/database"
+	"github.com/cairoeth/preconfirmations/rpc/database"
 
 	"github.com/alicebob/miniredis"
-	"github.com/cairoeth/preconfirmations-avs/rpc/server"
-	"github.com/cairoeth/preconfirmations-avs/rpc/testutils"
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/server"
+	"github.com/cairoeth/preconfirmations/rpc/testutils"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

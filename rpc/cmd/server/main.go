@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/database"
-	"github.com/cairoeth/preconfirmations-avs/rpc/server"
+	"github.com/cairoeth/preconfirmations/rpc/database"
+	"github.com/cairoeth/preconfirmations/rpc/server"
 	"github.com/ethereum/go-ethereum/crypto"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

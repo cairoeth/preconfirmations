@@ -9,9 +9,9 @@ import (
 	gethcommon "github.com/ethereum/go-ethereum/common"
 
 	regcoord "github.com/Layr-Labs/eigensdk-go/contracts/bindings/RegistryCoordinator"
-	erc20mock "github.com/cairoeth/preconfirmations-avs/contracts/bindings/ERC20Mock"
-	preconfchallengemanager "github.com/cairoeth/preconfirmations-avs/contracts/bindings/PreconfChallengeManager"
-	preconfservicemanager "github.com/cairoeth/preconfirmations-avs/contracts/bindings/PreconfServiceManager"
+	erc20mock "github.com/cairoeth/preconfirmations/contracts/bindings/ERC20Mock"
+	preconfchallengemanager "github.com/cairoeth/preconfirmations/contracts/bindings/PreconfChallengeManager"
+	preconfservicemanager "github.com/cairoeth/preconfirmations/contracts/bindings/PreconfServiceManager"
 )
 
 type AvsManagersBindings struct {

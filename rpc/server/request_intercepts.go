@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 	"go.uber.org/zap"
 )
 

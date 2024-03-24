@@ -12,7 +12,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 )
 
 var RpcEndpointUrl string // set by tests

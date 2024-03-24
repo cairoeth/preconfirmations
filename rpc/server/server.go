@@ -15,12 +15,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/adapters/webfile"
-	"github.com/cairoeth/preconfirmations-avs/rpc/application"
-	"github.com/cairoeth/preconfirmations-avs/rpc/database"
+	"github.com/cairoeth/preconfirmations/rpc/adapters/webfile"
+	"github.com/cairoeth/preconfirmations/rpc/application"
+	"github.com/cairoeth/preconfirmations/rpc/database"
 
 	"github.com/alicebob/miniredis"
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 )

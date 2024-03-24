@@ -10,10 +10,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/Layr-Labs/incredible-squaring-avs/metrics"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/chainio"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/receiverapi"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/sse"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/types"
+	"github.com/cairoeth/preconfirmations/preconf-operator/core/chainio"
+	"github.com/cairoeth/preconfirmations/preconf-operator/receiverapi"
+	"github.com/cairoeth/preconfirmations/preconf-operator/sse"
+	"github.com/cairoeth/preconfirmations/preconf-operator/types"
 
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients"
 	sdkelcontracts "github.com/Layr-Labs/eigensdk-go/chainio/clients/elcontracts"
@@ -29,7 +29,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/nodeapi"
 	"github.com/Layr-Labs/eigensdk-go/signerv2"
 	sdktypes "github.com/Layr-Labs/eigensdk-go/types"
-	"github.com/cairoeth/preconfirmations-avs/preconf-share/preconshare"
+	"github.com/cairoeth/preconfirmations/preconf-share/preconshare"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ybbus/jsonrpc/v3"

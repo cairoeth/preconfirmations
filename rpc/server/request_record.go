@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/database"
+	"github.com/cairoeth/preconfirmations/rpc/database"
 	"github.com/google/uuid"
 )
 

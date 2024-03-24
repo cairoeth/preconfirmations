@@ -69,7 +69,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-share/metrics"
+	"github.com/cairoeth/preconfirmations/preconf-share/metrics"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

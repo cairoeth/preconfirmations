@@ -1,7 +1,7 @@
 package sse
 
 import (
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/types"
+	"github.com/cairoeth/preconfirmations/preconf-operator/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 )

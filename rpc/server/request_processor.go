@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/database"
+	"github.com/cairoeth/preconfirmations/rpc/database"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-share/preconshare"
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/preconf-share/preconshare"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"

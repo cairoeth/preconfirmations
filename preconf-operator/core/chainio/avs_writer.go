@@ -8,7 +8,7 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/txmgr"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
 
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/config"
+	"github.com/cairoeth/preconfirmations/preconf-operator/core/config"
 )
 
 type AvsWriterer interface {

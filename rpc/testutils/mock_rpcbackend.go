@@ -12,7 +12,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 )
 
 var (

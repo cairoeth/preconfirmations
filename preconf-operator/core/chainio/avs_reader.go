@@ -9,8 +9,8 @@ import (
 	"github.com/Layr-Labs/eigensdk-go/chainio/clients/eth"
 	logging "github.com/Layr-Labs/eigensdk-go/logging"
 
-	erc20mock "github.com/cairoeth/preconfirmations-avs/contracts/bindings/ERC20Mock"
-	"github.com/cairoeth/preconfirmations-avs/preconf-operator/core/config"
+	erc20mock "github.com/cairoeth/preconfirmations/contracts/bindings/ERC20Mock"
+	"github.com/cairoeth/preconfirmations/preconf-operator/core/config"
 )
 
 type AvsReaderer interface {

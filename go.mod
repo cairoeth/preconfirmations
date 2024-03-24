@@ -1,4 +1,4 @@
-module github.com/cairoeth/preconfirmations-avs
+module github.com/cairoeth/preconfirmations
 
 go 1.21
 

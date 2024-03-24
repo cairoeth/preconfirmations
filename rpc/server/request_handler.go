@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/database"
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/database"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )

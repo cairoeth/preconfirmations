@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/testutils"
+	"github.com/cairoeth/preconfirmations/rpc/testutils"
 )
 
 func main() {

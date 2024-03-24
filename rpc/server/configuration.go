@@ -3,7 +3,7 @@ package server
 import (
 	"crypto/ecdsa"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/database"
+	"github.com/cairoeth/preconfirmations/rpc/database"
 	"go.uber.org/zap"
 )
 

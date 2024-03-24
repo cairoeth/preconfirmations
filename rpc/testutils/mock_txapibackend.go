@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cairoeth/preconfirmations-avs/rpc/types"
+	"github.com/cairoeth/preconfirmations/rpc/types"
 )
 
 var MockTxApiStatusForHash map[string]types.PrivateTxStatus = make(map[string]types.PrivateTxStatus)
