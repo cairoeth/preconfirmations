@@ -1,5 +1,6 @@
 # 🔌 Preconfirmations
 
+[![All protocol components](https://github.com/cairoeth/preconfirmations/actions/workflows/protocol.yaml/badge.svg)](https://github.com/cairoeth/preconfirmations/actions/workflows/protocol.yaml)
 [![Goreport status](https://goreportcard.com/badge/github.com/flashbots/mev-boost)](https://goreportcard.com/report/github.com/flashbots/mev-boost)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 
