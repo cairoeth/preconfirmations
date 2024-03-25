@@ -14,6 +14,7 @@ signed_tx = web3.eth.account.sign_transaction(
     tx, private_key).rawTransaction.hex()
 block = str(hex(web3.eth.block_number + 1))
 
+
 def request():
     r = requests.get('http://localhost:8080', json={
         "params": [
@@ -40,7 +41,7 @@ def request():
     json_response = r.json()
 
     if json_response["result"]["preconfSignature"] is None:
-        raise Exception("No preconfirmation") 
+        raise Exception("No preconfirmation")
 
     print(f"Status Code (request): {r.status_code}, Response: {r.json()}")
 
@@ -59,5 +60,5 @@ def request():
 
 
 # threaded_process_range()
-    
+
 request()

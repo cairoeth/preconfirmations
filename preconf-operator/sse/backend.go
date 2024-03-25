@@ -1,4 +1,4 @@
-// Package sse is the SSE Client for Preconf-Share
+// Package sse is the SSE Client for preconf-share
 package sse
 
 // SSEClient is the SSE Client abstraction

@@ -1,0 +1,50 @@
+name: All protocol components
+
+on: [push, pull_request]
+
+jobs:
+  protocol:
+    name: Protocol
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ^1.20
+        id: go
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10.11"
+        id: python
+
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+        id: checkout
+
+      - name: Install psql
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends postgresql-client
+        id: psql
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+        id: foundry
+
+      - name: Install docker-compose
+        run: |
+          sudo curl -L https://github.com/docker/compose/releases/download/v2.23.3/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+        id: docker-compose
+
+      - name: Install example requirements
+        run: pip install -r requirements.txt
+        id: python-requirements
+      
+      - name: Run all components concurrently
+        run: make run-ci
+        id: run-ci

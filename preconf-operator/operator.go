@@ -267,8 +267,10 @@ func (o *Operator) Start(ctx context.Context) error {
 
 	sub, err := client.Subscribe(eventChan)
 	if err != nil {
-		o.logger.Error("Cannot subscribe to Preconf-Share endpoint", "err", err)
+		o.logger.Error("Cannot subscribe to preconf-share endpoint", "err", err)
 	}
+
+	o.logger.Infof("Listening to preconf-share stream..")
 
 	for {
 		select {
@@ -280,7 +282,7 @@ func (o *Operator) Start(ctx context.Context) error {
 			o.logger.Fatal("Error in metrics server", "err", err)
 		case event := <-eventChan:
 			if event.Error != nil {
-				o.logger.Error("Error occurred from Preconf-Share stream", "err", event.Error)
+				o.logger.Error("Error occurred from preconf-share stream", "err", event.Error)
 				sub.Stop()
 			}
 

@@ -20,7 +20,7 @@ func main() {
 	app.Flags = []cli.Flag{config.ConfigFileFlag}
 	app.Name = "preconf-operator"
 	app.Usage = "Preconfirmations Operator"
-	app.Description = "Service that subcribes to Preconf-Share and sends preconfirmations."
+	app.Description = "Service that subcribes to preconf-share and sends preconfirmations."
 
 	app.Action = operatorMain
 	err := app.Run(os.Args)
