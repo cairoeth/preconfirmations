@@ -126,7 +126,7 @@ func (m *API) SendRequest(ctx context.Context, request SendRequestArgs) (_ SendR
 	}
 
 	// sleep a bit to check if request was preconfirmed
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 
 	// get preconf
 	block, signature, _, err := m.bundleStorage.GetPreconfByMatchingHash(ctx, matchingHash)

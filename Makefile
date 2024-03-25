@@ -35,7 +35,7 @@ run-operator:
 
 # Run anvil with prepared state
 run-anvil:
-	anvil --load-state contracts/anvil-state.json
+	anvil --load-state contracts/anvil-state.json --silent
 
 # Run all components concurrently
 run-all:
