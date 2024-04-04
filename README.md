@@ -18,7 +18,7 @@ In order to match users with preconfers, the `preconf-share` middleware acts as 
 
 As `preconf-share` requires users to pass arguments and extra parameters, `rpc` is a JSON-RPC wrapper that simplifies this interaction for usage on wallets (like `Metamask`).
 
-Read more in TODO.
+Read more [here](https://ethresear.ch/t/towards-an-implementation-of-based-preconfirmations-leveraging-restaking/19211).
 
 ## 🧱 Structure
 
