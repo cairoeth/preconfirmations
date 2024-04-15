@@ -37,6 +37,10 @@ run-operator:
 run-anvil:
 	anvil --load-state contracts/anvil-state.json --silent
 
+# Run the rpc
+run-rpc:
+	go run rpc/cmd/server/main.go -redis dev -signingKey dev -proxy http://127.0.0.1:8545
+
 # Run all components concurrently
 run-all:
 	make -j run-anvil run-share run-operator &
