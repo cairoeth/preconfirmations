@@ -43,7 +43,7 @@ run-rpc:
 
 # Run all components concurrently
 run-all:
-	make -j run-anvil run-share run-operator &
+	make -j run-anvil run-share run-operator run-rpc &
 
 # Run all in background and example (used by CI)
 run-ci:
